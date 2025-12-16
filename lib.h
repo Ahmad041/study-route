@@ -399,7 +399,7 @@ void animateTyping(int x, int y, char *text, int speed_ms) {
     gotoxy(x, y);
     for(int i = 0; text[i] != '\0'; i++) {
         printf("%c", text[i]);
-        Sleep(speed_ms); // Jeda antar huruf
+        Sleep(speed_ms); // Menggunakan S besar (Milidetik)
         
         // Cek jika user menekan tombol apapun untuk skip animasi
         if(kbhit()) {

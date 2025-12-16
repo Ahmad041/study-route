@@ -83,6 +83,62 @@ void About();
 
 // --- FUNGSI FITUR UTAMA ---
 
+void readUserDatabase() {
+    FILE *fuser;
+    User user; // Variabel penampung sementara
+    int i = 1; // Untuk nomor urut
+
+    // 1. Buka file mode "rb" (Read Binary)
+    fuser = fopen("database/user.dat", "rb");
+
+    // Cek apakah file ada?
+    if (fuser == NULL) {
+        printf("Database belum dibuat atau kosong.\n");
+        return;
+    }
+
+    printf("=================================================================================\n");
+    printf("| No | Username       | Password   | Email              | Poin | Role |\n");
+    printf("=================================================================================\n");
+
+    // 2. Loop baca data satu per satu
+    while (fread(&user, sizeof(User), 1, fuser)) {
+        printf("| %-2d | %-14s | %-10s | %-18s | %-4d | %-4d |\n", 
+               i, 
+               user.username, 
+               user.password, 
+               user.email, 
+               user.totalPoin, 
+               user.role);
+        i++;
+    }
+
+    // 3. Tutup file SETELAH loop selesai (Penting!)
+    fclose(fuser);
+    
+    printf("=================================================================================\n");
+}
+
+// Fungsi untuk menyimpan user baru ke file database
+void saveUserToDB(User newUser) {
+    FILE *fuser;
+
+    // 1. Buka file dengan mode "ab" (Append Binary)
+    // Pastikan kamu sudah buat folder bernama 'database' di projectmu ya!
+    fuser = fopen("database/user.dat", "ab"); 
+
+    if (fuser == NULL) {
+        printf("Error: Gagal membuka database untuk menyimpan.\n");
+        return;
+    }
+
+    // 2. Tulis data struct ke file
+    fwrite(&newUser, sizeof(User), 1, fuser);
+
+    // 3. Tutup file
+    fclose(fuser);
+}
+
 void absen()
 {
     printf("=========================================\n");
@@ -372,89 +428,101 @@ void Home()
 }
 
 // Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
+// Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
 int loginProcess()
 {
-    char username[100];
-    char password[100];
+    char username[50], password[50];
+    User userCheck; // Variabel untuk membaca file
     int found = 0;
 
+    // --- 1. SETUP TAMPILAN ---
     system("cls");
     int startX = ((getConsoleWidth() - 40) / 2);
     int startY = ((getConsoleHeight() - 12) / 2);
+
+    // Gambar Kotak
     drawBoxWithShadow(startX, startY, 40, 12, "LOGIN USER");
+
+    // --- 2. ANIMASI INTRO ---
+    // Teks muncul di dalam kotak
+    animateTyping(startX + 3, startY + 3, "Connecting to database...", 30); 
+    // Spinner muncul di sebelah kanan teks (posisi 29)
+    animateSpinner(startX + 29, startY + 3, 3, 100); 
+
+    // Bersihkan area animasi agar bersih saat input form muncul
+    clearArea(startX + 1, startY + 1, 38, 10); 
     
-    gotoxy(startX + 2, startY + 3);
+    // Gambar ulang border (opsional, untuk memastikan rapi)
+    borderDoubleLine(startX, startY, 40, 12);
+    gotoxy(startX + 15, startY); printf(" LOGIN USER "); // Judul ulang
+
+    // --- 3. INPUT FORM ---
+    gotoxy(startX + 3, startY + 3);
     printf("Username : ");
-    scanInputString(startX + 13, startY + 3, username, 20);
-    gotoxy(startX + 2, startY + 4);
+    scanInputString(startX + 14, startY + 3, username, 20);
+
+    gotoxy(startX + 3, startY + 5);
     printf("Password : ");
-    scanInputPassword(startX + 13, startY + 4, password, 20) ;
+    scanInputPassword(startX + 14, startY + 5, password, 20);
 
+    // --- 4. LOGIKA CEK KE FILE (DATABASE) ---
+    FILE *fuser = fopen("database/user.dat", "rb");
+    
+    if(fuser == NULL) {
+        msgBox("ERROR", "Database tidak ditemukan!", RED);
+        return 0;
+    }
 
-    drawBoxWithShadow(startX, startY, 40, 12, "WELCOME");
-    animateTyping(startX + 5, startY + 3, "Halo! Sistem sedang memuat data...", 50);
-    
-    
-    animateSpinner(startX + 17, startY + 6, 5, 100); 
-    
-
-    animateBlinkText(startX + 13, startY + 4, "PRESS ENTER TO START", 5);
-    // Cek ke "Database" Array
-    for (int i = 0; i < jumlahUser; i++)
-    {
-        if (strcmp(dataUser[i].username, username) == 0 && strcmp(dataUser[i].password, password) == 0)
-        {
-            currentUserIndex = i; // Simpan siapa yang login
+    while(fread(&userCheck, sizeof(User), 1, fuser)) {
+        // Bandingkan Input dengan Data di File
+        if(strcmp(userCheck.username, username) == 0 && strcmp(userCheck.password, password) == 0) {
+            // Jika COCOK, simpan data ke memori sementara (biar bisa dipakai di Home)
+            dataUser[0] = userCheck; // Kita pakai index 0 sebagai 'Active User'
+            currentUserIndex = 0; 
             found = 1;
             break;
         }
     }
+    fclose(fuser);
 
+    // --- 5. HASIL LOGIN ---
     if (found)
     {
-        printf("\nLogin Berhasil! Selamat datang, %s.\n", dataUser[currentUserIndex].namaLengkap);
-        getch();
+        // Tampilkan MsgBox Sukses (Sesuai request)
+        msgBox("SUCCESS", "Login Berhasil! Welcome.", GREEN);
         return 1;
     }
     else
     {
-        printf("\nLogin Gagal! Username atau Password salah.\n");
-        getch();
+        msgBox("FAILED", "Username/Password Salah!", RED);
         return 0;
     }
 }
 
 void Register()
 {
-    char newUsername[100];
-    char newPassword[100];
-    char email[100];
-    char nama[100];
+    User tempUser; // Variabel sementara
 
     system("cls");
     printf("=========================================\n");
     printf(" \tREGISTER NEW USER\n");
     printf("=========================================\n");
-    printf("Email: ");
-    scanf("%s", email);
-    printf("Nama Panggilan: ");
-    scanf("%s", nama);
-    printf("Username: ");
-    scanf("%s", newUsername);
-    printf("Password: ");
-    scanf("%s", newPassword);
+    
+    // Input data
+    printf("Email: "); scanf("%s", tempUser.email);
+    printf("Nama Panggilan: "); scanf("%s", tempUser.namaLengkap);
+    printf("Username: "); scanf("%s", tempUser.username);
+    printf("Password: "); scanf("%s", tempUser.password);
 
-    // Simpan ke Array
-    strcpy(dataUser[jumlahUser].email, email);
-    strcpy(dataUser[jumlahUser].namaLengkap, nama);
-    strcpy(dataUser[jumlahUser].username, newUsername);
-    strcpy(dataUser[jumlahUser].password, newPassword);
-    dataUser[jumlahUser].totalPoin = 0; // Poin awal 0
-    dataUser[jumlahUser].role = 1;      // Default role Siswa
+    // Set data default
+    tempUser.totalPoin = 0; 
+    tempUser.role = 1; // Default jadi Siswa (1)
 
-    jumlahUser++; // Increment jumlah user
+    // --- SIMPAN KE FILE ---
+    saveUserToDB(tempUser);
+    // ----------------------
 
-    printf("\nRegistrasi Berhasil! Silakan Login.\n");
+    printf("\nRegistrasi Berhasil! Data tersimpan di database.\n");
 }
 
 void About()
