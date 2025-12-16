@@ -196,6 +196,8 @@ void msgBox(char *title, char *message, int color) {
     int x = (screenW - width) / 2;
     int y = (screenH - height) / 2;
 
+    clearArea(x, y, width + 2, height + 2);
+
     // Simpan area belakang (advance technique, tapi untuk simpel kita clear saja nanti)
     setColor(color, 0);
     borderDoubleLine(x, y, width, height);
@@ -280,6 +282,20 @@ void scanInputString(int x, int y, char text[100], int maxChar) {
             printf("%c", ch);
         }
     }
+}
+
+void PrintTxt(int x,int y,char txtFile[100]) {
+    char text[255];
+    int penambah = 0;
+
+    FILE *file = fopen(txtFile, "r");
+
+    while (fgets(text, sizeof(text), file)) {
+        gotoxy(x,y+penambah);
+        printf("%s", text);
+        penambah++;
+    }
+    fclose(file);
 }
 
 void scanInputPassword(int x, int y, char text[100], int maxChar) {

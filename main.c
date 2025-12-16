@@ -80,6 +80,102 @@ void exitProgram();
 int loginProcess();
 void Register();
 void About();
+void pointShop();
+void reservasi();
+
+// --- DASHBOARD SESUAI ROLE ---
+
+void dashboardSiswa() {
+    int pilihan;
+    do {
+        system("cls");
+        // Header dengan Nama User
+        printf("=========================================\n");
+        printf(" DASHBOARD SISWA: %s \n", dataUser[currentUserIndex].namaLengkap);
+        printf(" Poin: %d \n", dataUser[currentUserIndex].totalPoin);
+        printf("=========================================\n");
+        
+        // Menu Khusus Siswa
+        char menuSiswa[][50] = {
+            "Absensi Kelas", 
+            "Reservasi Pengajar", 
+            "Download Modul", 
+            "Point Shop", 
+            "Kerjakan Quiz", 
+            "Logout"
+        };
+        
+        // Menggunakan drawMenu dari lib.h agar rapi
+        pilihan = drawMenu(5, 6, menuSiswa, 6); 
+
+        switch(pilihan) {
+            case 0: absen(); break;
+            case 1: reservasi(); break; // Nanti diupdate jadi Reservasi + Kritik Saran
+            case 2: msgBox("INFO", "Fitur Download Modul (Coming Soon)", BLUE); break;
+            case 3: pointShop(); break;
+            case 4: msgBox("INFO", "Fitur Quiz (Coming Soon)", BLUE); break;
+            case 5: return; // Logout
+        }
+    } while(1);
+}
+
+void dashboardPengajar() {
+    int pilihan;
+    do {
+        system("cls");
+        printf("=========================================\n");
+        printf(" DASHBOARD PENGAJAR: %s \n", dataUser[currentUserIndex].namaLengkap);
+        printf(" Saldo Poin: %d \n", dataUser[currentUserIndex].totalPoin);
+        printf("=========================================\n");
+
+        char menuPengajar[][50] = {
+            "Jadwal Mengajar", 
+            "Buat Quiz Baru", 
+            "Reservasi Ruangan", 
+            "Point Shop", 
+            "Logout"
+        };
+        
+        pilihan = drawMenu(5, 6, menuPengajar, 5);
+
+        switch(pilihan) {
+            case 0: msgBox("INFO", "Fitur Jadwal (Coming Soon)", BLUE); break;
+            case 1: msgBox("INFO", "Fitur Buat Quiz (Coming Soon)", BLUE); break;
+            case 2: msgBox("INFO", "Fitur Booking Ruangan (Coming Soon)", BLUE); break;
+            case 3: pointShop(); break; // Pengajar juga bisa belanja
+            case 4: return;
+        }
+    } while(1);
+}
+
+void dashboardPengawas() {
+    int pilihan;
+    do {
+        system("cls");
+        drawBoxWithShadow(2, 2, 50, 3, "ADMIN DASHBOARD");
+        gotoxy(4, 4); printf("User: %s (Super Admin)", dataUser[currentUserIndex].username);
+
+        char menuAdmin[][50] = {
+            "CRUD Akun User", 
+            "CRUD Mata Kuliah", 
+            "CRUD Ruangan", 
+            "CRUD Modul", 
+            "CRUD Point Shop",
+            "Logout"
+        };
+        
+        pilihan = drawMenu(5, 8, menuAdmin, 6);
+
+        switch(pilihan) {
+            case 0: msgBox("INFO", "Menu Kelola User (Next Step)", RED); break;
+            case 1: msgBox("INFO", "Menu Kelola Matkul (Next Step)", RED); break;
+            case 2: msgBox("INFO", "Menu Kelola Ruangan (Next Step)", RED); break;
+            case 3: msgBox("INFO", "Menu Kelola Modul (Next Step)", RED); break;
+            case 4: msgBox("INFO", "Menu Kelola Shop (Next Step)", RED); break;
+            case 5: return;
+        }
+    } while(1);
+}
 
 // --- FUNGSI FITUR UTAMA ---
 
@@ -428,7 +524,7 @@ void Home()
 }
 
 // Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
-// Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
+
 int loginProcess()
 {
     char username[50], password[50];
@@ -705,7 +801,21 @@ int main()
         case 1:
             if (loginProcess() == 1)
             {
-                Home(); // Masuk ke dashboard jika login sukses
+                // CEK ROLE SETELAH LOGIN SUKSES
+                int role = dataUser[currentUserIndex].role;
+                
+                if (role == 1) {
+                    dashboardSiswa();
+                } 
+                else if (role == 2) {
+                    dashboardPengajar();
+                } 
+                else if (role == 3) {
+                    dashboardPengawas();
+                }
+                else {
+                    msgBox("ERROR", "Role User Tidak Dikenali!", RED);
+                }
             }
             break;
         case 2:
