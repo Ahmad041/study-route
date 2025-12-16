@@ -22,6 +22,7 @@ typedef struct
     char status[50];
 } Pengajar;
 
+
 typedef struct
 {
     int id;
@@ -74,6 +75,7 @@ void absen();
 void pelatih(); // Placeholder untuk fitur Pengajar
 void leaderboard();
 void reservasi();
+void pointShop();
 void exitProgram();
 int loginProcess();
 void Register();
@@ -372,8 +374,8 @@ void Home()
 // Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
 int loginProcess()
 {
-    char username[50];
-    char password[50];
+    char username[100];
+    char password[100];
     int found = 0;
 
     system("cls");
@@ -424,10 +426,10 @@ int loginProcess()
 
 void Register()
 {
-    char newUsername[50];
-    char newPassword[50];
-    char email[50];
-    char nama[50];
+    char newUsername[100];
+    char newPassword[100];
+    char email[100];
+    char nama[100];
 
     system("cls");
     printf("=========================================\n");
@@ -598,12 +600,17 @@ int main()
     strcpy(dataUser[0].password, "admin");
     strcpy(dataUser[0].namaLengkap, "Administrator");
     dataUser[0].totalPoin = 100;
-    dataUser[0].role = 1;
+    dataUser[0].role = 0; // Role Pengajar
     strcpy(dataUser[1].username, "User");
     strcpy(dataUser[1].password, "User");
     strcpy(dataUser[1].namaLengkap, "User Biasa");
-    dataUser[1].totalPoin = 300;
-    dataUser[1].role = 1;
+    dataUser[2].totalPoin = 300;
+    dataUser[2].role = 1; // Role Siswa
+    strcpy(dataUser[2].username, "User");
+    strcpy(dataUser[2].password, "User");
+    strcpy(dataUser[2].namaLengkap, "User Biasa");
+    dataUser[2].totalPoin = 300;
+    dataUser[2].role = 3; // Role pengawas
     jumlahUser = 2;
 
     int pilihan;
