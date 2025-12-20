@@ -28,6 +28,23 @@ enum Colors {
 // 1. SYSTEM UTILITIES (Cursor, Screen, Size)
 // ==========================================
 
+
+// Mendapatkan posisi X kursor saat ini
+int wherex() {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if(GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
+        return csbi.dwCursorPosition.X;
+    return -1;
+}
+
+// Mendapatkan posisi Y kursor saat ini
+int wherey() {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if(GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
+        return csbi.dwCursorPosition.Y;
+    return -1;
+}
+
 void hideCursor() {
     HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_CURSOR_INFO cursorInfo;
