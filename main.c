@@ -10,7 +10,7 @@ typedef struct
     char email[50];
     char namaLengkap[50];
     int totalPoin; // Untuk Leaderboard
-    int role;      // 1 = Siswa, 2 = Pengajar
+    int role;      // 1 = Siswa, 2 = Pengajar , 3 = Pengawas
 } User;
 
 typedef struct
@@ -42,7 +42,7 @@ typedef struct
 // Kita siapkan slot untuk 100 user & 5 matkul
 User dataUser[100];
 int jumlahUser = 0; // Counter user yang terdaftar
-int currentUserIndex = -1;
+int currentUserIndex = -1; // karena array di mulai dari 0 menandakan kalau belum ada user yang login
 
 // --- DATA DUMMY BARANG ---
 ItemShop daftarItem[5] = {
@@ -88,6 +88,17 @@ void updateUser();
 void menuKelolaUser();
 void saveUserToDB(User);
 
+//Clear session
+void clearSession() {
+    // 1. Wipe data user dari memori (keamanan)
+    memset(&dataUser[0], 0, sizeof(User));
+
+    // 2. Reset penunjuk sesi
+    currentUserIndex = -1;
+    
+    printf("Session cleared safely.\n");
+}
+
 // --- DASHBOARD SESUAI ROLE ---
 
 void dashboardSiswa(){
@@ -131,6 +142,7 @@ void dashboardSiswa(){
             msgBox("INFO", "Fitur Quiz (Coming Soon)", BLUE);
             break;
         case 5:
+            clearSession();
             return; // Logout
         }
     } while (1);
@@ -170,6 +182,7 @@ void dashboardPengajar(){
             pointShop();
             break; // Pengajar juga bisa belanja
         case 4:
+            clearSession();
             return;
         }
     } while (1);
@@ -212,6 +225,7 @@ void dashboardPengawas(){
             msgBox("INFO", "Menu Kelola Shop (Next Step)", RED);
             break;
         case 5:
+            clearSession();
             return;
         }
     } while (1);
@@ -457,12 +471,6 @@ void readUserDatabase(){
     printf("=================================================================================\n");
 }
 
-//||===================================||
-//||            CRUD USER              ||
-//||===================================||
-
-
-
 // Fungsi untuk menyimpan user baru ke file database
 void saveUserToDB(User newUser){
     FILE *fuser;
@@ -519,6 +527,7 @@ void menuKelolaUser(){
         }
     } while (1);
 }
+
 
 // --- FUNGSI MENU UTAMA ---
 
@@ -838,65 +847,6 @@ void pointShop()
     } while (pilihan != 0);
 }
 
-
-
-
-void Home()
-{
-    int pilihan;
-    do
-    {
-        system("cls");
-        printf("=========================================\n");
-        printf("\tDASHBOARD: %s (Poin: %d)\n", dataUser[currentUserIndex].namaLengkap, dataUser[currentUserIndex].totalPoin);
-        printf("=========================================\n");
-        printf("1. Absen Kelas (Tambah Poin)\n");
-        printf("2. Data Pengajar (Pelatih)\n");
-        printf("3. Leaderboard\n");
-        printf("4. Study Route (Reservasi)\n");
-        printf("5. Point Shop (Tukar Poin)\n"); // <--- MENU BARU
-        printf("6. Logout\n");                  // Geser nomor logout
-        printf("Pilihan [1-6]: ");
-
-        if (scanf("%d", &pilihan) != 1)
-        {
-            while (getchar() != '\n')
-                ;
-            pilihan = -1;
-        }
-
-        switch (pilihan)
-        {
-        case 1:
-            absen();
-            break;
-        case 2:
-            pelatih();
-            break;
-        case 3:
-            leaderboard();
-            break;
-        case 4:
-            reservasi();
-            break;
-        case 5:
-            pointShop();
-            break; // <--- PANGGIL FUNGSI
-        case 6:
-            printf("Logging out...\n");
-            return;
-        default:
-            printf("Pilihan salah.\n");
-            break;
-        }
-
-        if (pilihan != 6)
-        {
-            printf("\nTekan tombol apa saja untuk lanjut...");
-            getch();
-        }
-    } while (pilihan != 6);
-}
 
 // Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
 
