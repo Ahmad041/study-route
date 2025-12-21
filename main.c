@@ -3,6 +3,19 @@
 
 typedef char string[50];
 
+typedef struct {
+    int id;             // Identitas soal
+    int idMatkul;       // Identitas mata kuliah
+    int tipe;           // 1 = Pilihan Ganda, 2 = Essay
+    char soal[200];     // Kalimat pertanyaan
+    char opsiA[50];     // Pilihan A
+    char opsiB[50];     // Pilihan B
+    char opsiC[50];     // Pilihan C
+    char opsiD[50];     // Pilihan D
+    char jawabanBenar[50]; // Kunci jawaban (misal: "A" atau kata kunci essay)
+    int poin;           // Nilai jika benar
+} DataQuiz;
+
 typedef struct
 {
     char username[50];
@@ -96,6 +109,12 @@ void deleteUser();
 void updateUser();
 void menuKelolaUser();
 void saveUserToDB(User);
+void clearSession();
+void jalankanQuiz();
+void dashboardSiswa();
+void dashboardPengajar();
+void dashboardPengawas();
+
 
 // Clear session
 void clearSession()
@@ -242,6 +261,198 @@ void dashboardPengawas()
             return;
         }
     } while (1);
+}
+
+//||===================================||
+//||            CRUD QUIZ              ||
+//||===================================||
+
+void tambahQuiz() {
+    DataQuiz q, temp;
+    FILE *fp;
+
+    system("cls");
+    printf("=== TAMBAH QUIZ BARU ===\n");
+
+    // 1. Auto-Generate ID (Sederhana: Cek ID terakhir + 1)
+    // Kita baca file dari awal untuk cari ID terakhir
+    int lastId = 0;
+    fp = fopen("database/quiz.dat", "rb");
+    if (fp != NULL) {
+        while (fread(&temp, sizeof(DataQuiz), 1, fp)) {
+            lastId = temp.id;
+        }
+        fclose(fp);
+    }
+    q.id = lastId + 1; // ID otomatis urut
+    printf("ID Soal: %d (Otomatis)\n", q.id);
+
+    // 2. Input Data
+    // Kita set default tipe = 1 (Pilihan Ganda) untuk sekarang
+    q.tipe = 1; 
+    
+    // Matkul ID (Nanti bisa dipilih dari daftar Matkul, skrg manual dulu)
+    printf("Masukkan ID Matkul: "); scanf("%d", &q.idMatkul); fflush(stdin);
+
+    printf("Masukkan Soal: "); 
+    scanf("%[^\n]", q.soal); fflush(stdin);
+
+    printf("Opsi A: "); scanf("%[^\n]", q.opsiA); fflush(stdin);
+    printf("Opsi B: "); scanf("%[^\n]", q.opsiB); fflush(stdin);
+    printf("Opsi C: "); scanf("%[^\n]", q.opsiC); fflush(stdin);
+    printf("Opsi D: "); scanf("%[^\n]", q.opsiD); fflush(stdin);
+
+    printf("Kunci Jawaban (A/B/C/D): "); 
+    scanf("%s", q.jawabanBenar); fflush(stdin);
+
+    printf("Poin jika benar: "); scanf("%d", &q.poin); fflush(stdin);
+
+    // 3. Simpan ke File
+    fp = fopen("database/quiz.dat", "ab"); // Mode Append
+    if (fp == NULL) {
+        printf("Error: Gagal membuka database!\n");
+    } else {
+        fwrite(&q, sizeof(DataQuiz), 1, fp); // Tulis struct ke file
+        fclose(fp);
+        msgBox("SUKSES", "Soal baru berhasil disimpan!", GREEN);
+    }
+}
+
+void lihatSemuaQuiz() {
+    DataQuiz q;
+    FILE *fp;
+
+    system("cls");
+    printf("=== DAFTAR SOAL BANK ===\n");
+    printf("%-3s | %-30s | %-5s | %-5s\n", "ID", "Soal", "Kunci", "Poin");
+    printf("----------------------------------------------------\n");
+
+    fp = fopen("database/quiz.dat", "rb"); // Mode Read Binary
+    if (fp == NULL) {
+        printf("Database kosong atau belum dibuat.\n");
+    } else {
+        while (fread(&q, sizeof(DataQuiz), 1, fp)) {
+            // Kita potong tampilan soal biar tidak kepanjangan di tabel
+            // Menggunakan format string precision (%.30s)
+            printf("%-3d | %-30.30s... | %-5s | %-5d\n", 
+                   q.id, q.soal, q.jawabanBenar, q.poin);
+        }
+        fclose(fp);
+    }
+    
+    printf("\nTekan ENTER kembali...");
+    getch();
+}
+
+void hapusQuiz() {
+    FILE *fp, *fpTemp;
+    DataQuiz q;
+    int idHapus, found = 0;
+
+    system("cls");
+    printf("=== HAPUS DATA QUIZ ===\n");
+    
+    // Tampilkan dulu daftarnya biar user tau ID berapa yang mau dihapus
+    // (Opsional: panggil fungsi lihatSemuaQuiz() di sini kalau mau)
+    
+    printf("Masukkan ID Soal yang akan dihapus: ");
+    scanf("%d", &idHapus);
+
+    fp = fopen("database/quiz.dat", "rb");
+    fpTemp = fopen("database/temp.dat", "wb");
+
+    if (fp == NULL) {
+        msgBox("ERROR", "Database belum ada!", RED);
+        return;
+    }
+
+    while (fread(&q, sizeof(DataQuiz), 1, fp)) {
+        if (q.id == idHapus) {
+            found = 1; // Ketemu, JANGAN disalin ke temp (artinya dihapus)
+            printf("Menghapus soal ID %d...\n", q.id);
+        } else {
+            // Bukan yang dicari? Salin ke file temp
+            fwrite(&q, sizeof(DataQuiz), 1, fpTemp);
+        }
+    }
+
+    fclose(fp);
+    fclose(fpTemp);
+
+    if (found) {
+        remove("database/quiz.dat");             // Hapus file asli
+        rename("database/temp.dat", "database/quiz.dat"); // Ganti nama temp jadi asli
+        msgBox("SUKSES", "Data berhasil dihapus!", GREEN);
+    } else {
+        remove("database/temp.dat"); // Hapus temp karena batal pakai
+        msgBox("GAGAL", "ID Soal tidak ditemukan.", RED);
+    }
+}
+
+void editQuiz() {
+    FILE *fp, *fpTemp;
+    DataQuiz q;
+    int idEdit, found = 0;
+
+    system("cls");
+    printf("=== EDIT DATA QUIZ ===\n");
+    printf("Masukkan ID Soal yang akan diedit: ");
+    scanf("%d", &idEdit);
+    fflush(stdin); // Bersihkan buffer keyboard
+
+    fp = fopen("database/quiz.dat", "rb");
+    fpTemp = fopen("database/temp.dat", "wb");
+
+    if (fp == NULL) {
+        msgBox("ERROR", "Database belum ada!", RED);
+        return;
+    }
+
+    while (fread(&q, sizeof(DataQuiz), 1, fp)) {
+        if (q.id == idEdit) {
+            found = 1;
+            // Tampilkan data lama sebagai referensi
+            printf("\n--- Data Lama ---\n");
+            printf("Soal: %s\n", q.soal);
+            printf("Kunci: %s | Poin: %d\n", q.jawabanBenar, q.poin);
+            
+            printf("\n--- Masukkan Data Baru ---\n");
+            // Kita pakai ID yang sama, tidak perlu diubah
+            
+            // Edit ID Matkul
+            printf("ID Matkul Baru: "); scanf("%d", &q.idMatkul); fflush(stdin);
+
+            // Edit Soal & Opsi
+            printf("Soal Baru: "); scanf("%[^\n]", q.soal); fflush(stdin);
+            printf("Opsi A: "); scanf("%[^\n]", q.opsiA); fflush(stdin);
+            printf("Opsi B: "); scanf("%[^\n]", q.opsiB); fflush(stdin);
+            printf("Opsi C: "); scanf("%[^\n]", q.opsiC); fflush(stdin);
+            printf("Opsi D: "); scanf("%[^\n]", q.opsiD); fflush(stdin);
+            
+            // Edit Kunci & Poin
+            printf("Kunci Baru (A/B/C/D): "); scanf("%s", q.jawabanBenar); fflush(stdin);
+            printf("Poin Baru: "); scanf("%d", &q.poin); fflush(stdin);
+
+            // Tulis data YANG BARU DIEDIT ke temp
+            fwrite(&q, sizeof(DataQuiz), 1, fpTemp);
+            
+        } else {
+            // Bukan yang dicari? Salin data ASLI ke temp
+            fwrite(&q, sizeof(DataQuiz), 1, fpTemp);
+        }
+    }
+
+    fclose(fp);
+    fclose(fpTemp);
+
+    if (found) {
+        remove("database/quiz.dat");
+        rename("database/temp.dat", "database/quiz.dat");
+        msgBox("SUKSES", "Data berhasil diperbarui!", GREEN);
+    } else {
+        remove("database/temp.dat");
+        msgBox("GAGAL", "ID Soal tidak ditemukan.", RED);
+    }
 }
 
 //||===================================||
@@ -731,52 +942,6 @@ void hapusRuangan(const char *kodeTarget) {
     }
 }
 
-void moveRuangan(const char *kodeTarget) {
-    FILE *src, *dest, *tmp;
-    struct Ruangan ruang;
-    int found = 0;
-
-    src  = fopen("ruangan.dat", "rb");
-    tmp  = fopen("temp.dat", "wb");
-    dest = fopen("ruanganMoved.dat", "ab");
-
-    if (!src || !tmp || !dest) {
-        printf("Gagal membuka file!\n");
-        return;
-    }
-
-    while (fread(&ruang, sizeof(ruang), 1, src)) {
-        if (strcmp(ruang.kode, kodeTarget) == 0) {
-            found = 1;
-            fwrite(&ruang, sizeof(ruang), 1, dest);
-        } else {
-            fwrite(&ruang, sizeof(ruang), 1, tmp);
-        }
-    }
-
-    fclose(src);
-    fclose(tmp);
-    fclose(dest);
-
-    if (found) {
-        src = fopen("ruangan.dat", "wb");
-        tmp = fopen("temp.dat", "rb");
-
-        while (fread(&ruang, sizeof(ruang), 1, tmp)) {
-            fwrite(&ruang, sizeof(ruang), 1, src);
-        }
-
-        fclose(src);
-        fclose(tmp);
-
-        printf("Data berhasil dipindahkan!\n");
-    } else {
-        printf("Kode %s tidak ditemukan.\n", kodeTarget);
-    }
-}
-
-
-
 void Ruangan() {
     int pilih;
     char kode[20];
@@ -814,7 +979,7 @@ void Ruangan() {
                 kode[strcspn(kode, "\n")] = 0;
                 hapusRuangan(kode);
                 break;
-                
+
             case 0:
                 printf("Keluar program.\n");
                 break;
@@ -1147,6 +1312,62 @@ void pointShop()
     } while (pilihan != 0);
 }
 
+
+void jalankanQuiz() {
+    // --- 1. CONTOH DATA DUMMY (Nanti ini diambil dari Database/File) ---
+    DataQuiz q;
+    q.id = 1;
+    q.tipe = 1; 
+    strcpy(q.soal, "Perintah printf() dalam bahasa C terdapat di library apa?");
+    strcpy(q.opsiA, "stdio.h");
+    strcpy(q.opsiB, "stdlib.h");
+    strcpy(q.opsiC, "string.h");
+    strcpy(q.opsiD, "conio.h");
+    strcpy(q.jawabanBenar, "A"); // Kunci Jawaban
+    q.poin = 10;
+
+    // --- 2. TAMPILKAN LAYAR ---
+    system("cls"); // Bersihkan layar
+    
+    // Header
+    gotoxy(20, 3); printf("=== KUIS AKADEMIK ===");
+    gotoxy(20, 4); printf("Jawab dengan benar untuk dapat %d Poin!", q.poin);
+
+    // Tampilkan Soal
+    gotoxy(20, 6); printf("SOAL: %s", q.soal);
+
+    // --- 3. SIAPKAN MENU PILIHAN (Logika sprintf tadi) ---
+    char options[4][50]; // Siapkan 4 laci kosong
+
+    // Isi laci satu per satu
+    sprintf(options[0], "A. %-20s", q.opsiA);
+    sprintf(options[1], "B. %-20s", q.opsiB);
+    sprintf(options[2], "C. %-20s", q.opsiC);
+    sprintf(options[3], "D. %-20s", q.opsiD);
+
+    // --- 4. TAMPILKAN MENU INTERAKTIF ---
+    // User memilih menggunakan panah atas/bawah
+    // drawMenu mengembalikan angka: 0 untuk A, 1 untuk B, dst.
+    int pilihanIndex = drawMenu(20, 8, options, 4);
+
+    // --- 5. CEK JAWABAN ---
+    // Trik C: Mengubah angka (0,1,2,3) menjadi Huruf ('A','B','C','D')
+    // 'A' + 0 = 'A'
+    // 'A' + 1 = 'B'
+    char jawabanUser = 'A' + pilihanIndex; 
+
+    // Bandingkan jawaban user dengan Kunci Jawaban
+    // Kita ambil huruf pertama jawabanBenar (q.jawabanBenar[0])
+    if (jawabanUser == q.jawabanBenar[0]) {
+        msgBox("BENAR!", "Selamat, jawaban kamu tepat!", GREEN);
+        // Di sini nanti tambahkan logika: currentUser.poin += q.poin;
+    } else {
+        // Tampilkan pesan salah (gunakan buffer untuk pesan custom)
+        char pesanSalah[100];
+        sprintf(pesanSalah, "Yah salah. Jawaban yang benar adalah %s", q.jawabanBenar);
+        msgBox("SALAH", pesanSalah, RED);
+    }
+}
 // Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
 
 //||==========================================||
