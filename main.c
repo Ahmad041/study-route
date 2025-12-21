@@ -3,19 +3,20 @@
 
 typedef char string[50];
 
-typedef struct {
-    int id;             // Identitas soal
-    int idMatkul;       // Identitas mata kuliah
-    int tipe;           // 1 = Pilihan Ganda, 2 = Essay
-    char soal[200];     // Kalimat pertanyaan
-    char opsiA[50];     // Pilihan A
-    char opsiB[50];     // Pilihan B
-    char opsiC[50];     // Pilihan C
-    char opsiD[50];     // Pilihan D
+typedef struct
+{
+    int id;                // Identitas soal
+    int idMatkul;          // Identitas mata kuliah
+    int tipe;              // 1 = Pilihan Ganda, 2 = Essay
+    char soal[200];        // Kalimat pertanyaan
+    char opsiA[50];        // Pilihan A
+    char opsiB[50];        // Pilihan B
+    char opsiC[50];        // Pilihan C
+    char opsiD[50];        // Pilihan D
     char jawabanBenar[50]; // Kunci jawaban (misal: "A" atau kata kunci essay)
-    int poin;           // Nilai jika benar
+    int poin;              // Nilai jika benar
 } DataQuiz;
-User currentUser;
+
 typedef struct
 {
     char username[50];
@@ -25,7 +26,7 @@ typedef struct
     int totalPoin; // Untuk Leaderboard
     int role;      // 1 = Siswa, 2 = Pengajar , 3 = Pengawas
 } User;
-
+User currentUser;
 struct Ruangan
 {
     char kode[20];
@@ -91,29 +92,43 @@ Pengajar daftarPengajar[5] = {
 // Variable untuk sesi login saat ini
 
 // --- PROTOTYPE FUNGSI ---
-void Home();
-void absen();
-void pelatih(); // Placeholder untuk fitur Pengajar
-void leaderboard();
-void reservasi();
-void pointShop();
-void exitProgram();
-int loginProcess();
-void Register();
-void About();
-void pointShop();
-void reservasi();
+
+
+//User Management
 void viewUser();
 void adminAddUser();
 void deleteUser();
 void updateUser();
 void menuKelolaUser();
 void saveUserToDB(User);
+
+//Logout and Login
+void About();
+void exitProgram();
+void Register();
+int loginProcess();
 void clearSession();
+
+//Fitur Utama
+void leaderboard();
+void absen();
+void reservasi();
 void jalankanQuiz();
+void pointShop();
+void reservasi();
+void pelatih(); 
+
+//Dashboard functions
 void dashboardSiswa();
 void dashboardPengajar();
 void dashboardPengawas();
+
+//Quiz functions
+void menuKelolaQuiz();
+void tambahQuiz();
+void lihatSemuaQuiz();
+void hapusQuiz();
+void editQuiz();
 
 
 // Clear session
@@ -169,7 +184,7 @@ void dashboardSiswa()
             pointShop();
             break;
         case 4:
-            msgBox("INFO", "Fitur Quiz (Coming Soon)", BLUE);
+            jalankanQuiz();
             break;
         case 5:
             clearSession();
@@ -190,7 +205,7 @@ void dashboardPengajar(){
 
         char menuPengajar[][50] = {
             "Jadwal Mengajar",
-            "Buat Quiz Baru",
+            "Kelola Quiz",
             "Reservasi Ruangan",
             "Point Shop",
             "Logout"};
@@ -203,7 +218,7 @@ void dashboardPengajar(){
             msgBox("INFO", "Fitur Jadwal (Coming Soon)", BLUE);
             break;
         case 1:
-            msgBox("INFO", "Fitur Buat Quiz (Coming Soon)", BLUE);
+            menuKelolaQuiz();
             break;
         case 2:
             msgBox("INFO", "Fitur Booking Ruangan (Coming Soon)", BLUE);
@@ -265,7 +280,45 @@ void dashboardPengawas(){
 //||            CRUD QUIZ              ||
 //||===================================||
 
-void tambahQuiz() {
+void menuKelolaQuiz()
+{
+    int pilihan;
+    char menuCRUD[][50] = {
+        "Tambah Quiz Baru",
+        "Lihat Semua Quiz",
+        "Edit Quiz",
+        "Hapus Quiz",
+        "Kembali"};
+
+    do
+    {
+        system("cls");
+        drawBoxWithShadow(5, 2, 40, 3, "KELOLA QUIZ (CRUD)");
+
+        pilihan = drawMenu(5, 7, menuCRUD, 5);
+
+        switch (pilihan)
+        {
+        case 0:
+            tambahQuiz();
+            break;
+        case 1:
+            lihatSemuaQuiz();
+            break;
+        case 2:
+            editQuiz();
+            break;
+        case 3:
+            hapusQuiz();
+            break;
+        case 4:
+            return; // Kembali ke Dashboard Pengajar
+        }
+    } while (1);
+}
+
+void tambahQuiz()
+{
     DataQuiz q, temp;
     FILE *fp;
 
@@ -276,8 +329,10 @@ void tambahQuiz() {
     // Kita baca file dari awal untuk cari ID terakhir
     int lastId = 0;
     fp = fopen("database/quiz.dat", "rb");
-    if (fp != NULL) {
-        while (fread(&temp, sizeof(DataQuiz), 1, fp)) {
+    if (fp != NULL)
+    {
+        while (fread(&temp, sizeof(DataQuiz), 1, fp))
+        {
             lastId = temp.id;
         }
         fclose(fp);
@@ -287,36 +342,54 @@ void tambahQuiz() {
 
     // 2. Input Data
     // Kita set default tipe = 1 (Pilihan Ganda) untuk sekarang
-    q.tipe = 1; 
-    
+    q.tipe = 1;
+
     // Matkul ID (Nanti bisa dipilih dari daftar Matkul, skrg manual dulu)
-    printf("Masukkan ID Matkul: "); scanf("%d", &q.idMatkul); fflush(stdin);
+    printf("Masukkan ID Matkul: ");
+    scanf("%d", &q.idMatkul);
+    fflush(stdin);
 
-    printf("Masukkan Soal: "); 
-    scanf("%[^\n]", q.soal); fflush(stdin);
+    printf("Masukkan Soal: ");
+    scanf("%[^\n]", q.soal);
+    fflush(stdin);
 
-    printf("Opsi A: "); scanf("%[^\n]", q.opsiA); fflush(stdin);
-    printf("Opsi B: "); scanf("%[^\n]", q.opsiB); fflush(stdin);
-    printf("Opsi C: "); scanf("%[^\n]", q.opsiC); fflush(stdin);
-    printf("Opsi D: "); scanf("%[^\n]", q.opsiD); fflush(stdin);
+    printf("Opsi A: ");
+    scanf("%[^\n]", q.opsiA);
+    fflush(stdin);
+    printf("Opsi B: ");
+    scanf("%[^\n]", q.opsiB);
+    fflush(stdin);
+    printf("Opsi C: ");
+    scanf("%[^\n]", q.opsiC);
+    fflush(stdin);
+    printf("Opsi D: ");
+    scanf("%[^\n]", q.opsiD);
+    fflush(stdin);
 
-    printf("Kunci Jawaban (A/B/C/D): "); 
-    scanf("%s", q.jawabanBenar); fflush(stdin);
+    printf("Kunci Jawaban (A/B/C/D): ");
+    scanf("%s", q.jawabanBenar);
+    fflush(stdin);
 
-    printf("Poin jika benar: "); scanf("%d", &q.poin); fflush(stdin);
+    printf("Poin jika benar: ");
+    scanf("%d", &q.poin);
+    fflush(stdin);
 
     // 3. Simpan ke File
     fp = fopen("database/quiz.dat", "ab"); // Mode Append
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         printf("Error: Gagal membuka database!\n");
-    } else {
+    }
+    else
+    {
         fwrite(&q, sizeof(DataQuiz), 1, fp); // Tulis struct ke file
         fclose(fp);
         msgBox("SUKSES", "Soal baru berhasil disimpan!", GREEN);
     }
 }
 
-void lihatSemuaQuiz() {
+void lihatSemuaQuiz()
+{
     DataQuiz q;
     FILE *fp;
 
@@ -326,49 +399,59 @@ void lihatSemuaQuiz() {
     printf("----------------------------------------------------\n");
 
     fp = fopen("database/quiz.dat", "rb"); // Mode Read Binary
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         printf("Database kosong atau belum dibuat.\n");
-    } else {
-        while (fread(&q, sizeof(DataQuiz), 1, fp)) {
+    }
+    else
+    {
+        while (fread(&q, sizeof(DataQuiz), 1, fp))
+        {
             // Kita potong tampilan soal biar tidak kepanjangan di tabel
             // Menggunakan format string precision (%.30s)
-            printf("%-3d | %-30.30s... | %-5s | %-5d\n", 
+            printf("%-3d | %-30.30s... | %-5s | %-5d\n",
                    q.id, q.soal, q.jawabanBenar, q.poin);
         }
         fclose(fp);
     }
-    
+
     printf("\nTekan ENTER kembali...");
     getch();
 }
 
-void hapusQuiz() {
+void hapusQuiz()
+{
     FILE *fp, *fpTemp;
     DataQuiz q;
     int idHapus, found = 0;
 
     system("cls");
     printf("=== HAPUS DATA QUIZ ===\n");
-    
+
     // Tampilkan dulu daftarnya biar user tau ID berapa yang mau dihapus
     // (Opsional: panggil fungsi lihatSemuaQuiz() di sini kalau mau)
-    
+
     printf("Masukkan ID Soal yang akan dihapus: ");
     scanf("%d", &idHapus);
 
     fp = fopen("database/quiz.dat", "rb");
     fpTemp = fopen("database/temp.dat", "wb");
 
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         msgBox("ERROR", "Database belum ada!", RED);
         return;
     }
 
-    while (fread(&q, sizeof(DataQuiz), 1, fp)) {
-        if (q.id == idHapus) {
+    while (fread(&q, sizeof(DataQuiz), 1, fp))
+    {
+        if (q.id == idHapus)
+        {
             found = 1; // Ketemu, JANGAN disalin ke temp (artinya dihapus)
             printf("Menghapus soal ID %d...\n", q.id);
-        } else {
+        }
+        else
+        {
             // Bukan yang dicari? Salin ke file temp
             fwrite(&q, sizeof(DataQuiz), 1, fpTemp);
         }
@@ -377,17 +460,21 @@ void hapusQuiz() {
     fclose(fp);
     fclose(fpTemp);
 
-    if (found) {
-        remove("database/quiz.dat");             // Hapus file asli
+    if (found)
+    {
+        remove("database/quiz.dat");                      // Hapus file asli
         rename("database/temp.dat", "database/quiz.dat"); // Ganti nama temp jadi asli
         msgBox("SUKSES", "Data berhasil dihapus!", GREEN);
-    } else {
+    }
+    else
+    {
         remove("database/temp.dat"); // Hapus temp karena batal pakai
         msgBox("GAGAL", "ID Soal tidak ditemukan.", RED);
     }
 }
 
-void editQuiz() {
+void editQuiz()
+{
     FILE *fp, *fpTemp;
     DataQuiz q;
     int idEdit, found = 0;
@@ -401,40 +488,60 @@ void editQuiz() {
     fp = fopen("database/quiz.dat", "rb");
     fpTemp = fopen("database/temp.dat", "wb");
 
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         msgBox("ERROR", "Database belum ada!", RED);
         return;
     }
 
-    while (fread(&q, sizeof(DataQuiz), 1, fp)) {
-        if (q.id == idEdit) {
+    while (fread(&q, sizeof(DataQuiz), 1, fp))
+    {
+        if (q.id == idEdit)
+        {
             found = 1;
             // Tampilkan data lama sebagai referensi
             printf("\n--- Data Lama ---\n");
             printf("Soal: %s\n", q.soal);
             printf("Kunci: %s | Poin: %d\n", q.jawabanBenar, q.poin);
-            
+
             printf("\n--- Masukkan Data Baru ---\n");
             // Kita pakai ID yang sama, tidak perlu diubah
-            
+
             // Edit ID Matkul
-            printf("ID Matkul Baru: "); scanf("%d", &q.idMatkul); fflush(stdin);
+            printf("ID Matkul Baru: ");
+            scanf("%d", &q.idMatkul);
+            fflush(stdin);
 
             // Edit Soal & Opsi
-            printf("Soal Baru: "); scanf("%[^\n]", q.soal); fflush(stdin);
-            printf("Opsi A: "); scanf("%[^\n]", q.opsiA); fflush(stdin);
-            printf("Opsi B: "); scanf("%[^\n]", q.opsiB); fflush(stdin);
-            printf("Opsi C: "); scanf("%[^\n]", q.opsiC); fflush(stdin);
-            printf("Opsi D: "); scanf("%[^\n]", q.opsiD); fflush(stdin);
-            
+            printf("Soal Baru: ");
+            scanf("%[^\n]", q.soal);
+            fflush(stdin);
+            printf("Opsi A: ");
+            scanf("%[^\n]", q.opsiA);
+            fflush(stdin);
+            printf("Opsi B: ");
+            scanf("%[^\n]", q.opsiB);
+            fflush(stdin);
+            printf("Opsi C: ");
+            scanf("%[^\n]", q.opsiC);
+            fflush(stdin);
+            printf("Opsi D: ");
+            scanf("%[^\n]", q.opsiD);
+            fflush(stdin);
+
             // Edit Kunci & Poin
-            printf("Kunci Baru (A/B/C/D): "); scanf("%s", q.jawabanBenar); fflush(stdin);
-            printf("Poin Baru: "); scanf("%d", &q.poin); fflush(stdin);
+            printf("Kunci Baru (A/B/C/D): ");
+            scanf("%s", q.jawabanBenar);
+            fflush(stdin);
+            printf("Poin Baru: ");
+            scanf("%d", &q.poin);
+            fflush(stdin);
 
             // Tulis data YANG BARU DIEDIT ke temp
             fwrite(&q, sizeof(DataQuiz), 1, fpTemp);
-            
-        } else {
+        }
+        else
+        {
             // Bukan yang dicari? Salin data ASLI ke temp
             fwrite(&q, sizeof(DataQuiz), 1, fpTemp);
         }
@@ -443,11 +550,14 @@ void editQuiz() {
     fclose(fp);
     fclose(fpTemp);
 
-    if (found) {
+    if (found)
+    {
         remove("database/quiz.dat");
         rename("database/temp.dat", "database/quiz.dat");
         msgBox("SUKSES", "Data berhasil diperbarui!", GREEN);
-    } else {
+    }
+    else
+    {
         remove("database/temp.dat");
         msgBox("GAGAL", "ID Soal tidak ditemukan.", RED);
     }
@@ -754,18 +864,18 @@ void menuKelolaUser()
     } while (1);
 }
 
-
 //||===================================||
 //||            CRUD Ruangan           ||
 //||===================================||
 
-
-void tambahRuangan() {
+void tambahRuangan()
+{
     FILE *file;
     struct Ruangan ruang;
 
     file = fopen("ruangan.dat", "ab");
-    if (!file) {
+    if (!file)
+    {
         printf("Gagal membuka file!\n");
         return;
     }
@@ -796,18 +906,21 @@ void tambahRuangan() {
     printf("Ruangan berhasil ditambahkan!\n");
 }
 
-void tampilRuangan() {
+void tampilRuangan()
+{
     FILE *file;
     struct Ruangan ruang;
 
     file = fopen("ruangan.dat", "rb");
-    if (!file) {
+    if (!file)
+    {
         printf("File belum ada atau gagal dibuka.\n");
         return;
     }
 
     printf("\n=== DATA RUANGAN ===\n");
-    while (fread(&ruang, sizeof(ruang), 1, file)) {
+    while (fread(&ruang, sizeof(ruang), 1, file))
+    {
         printf("Kode        : %s\n", ruang.kode);
         printf("Nama        : %s\n", ruang.namaRuangan);
         printf("Kapasitas   : %d\n", ruang.kapasitas);
@@ -818,7 +931,8 @@ void tampilRuangan() {
     fclose(file);
 }
 
-void updateRuangan(const char *kodeTarget) {
+void updateRuangan(const char *kodeTarget)
+{
     FILE *src, *tmp;
     struct Ruangan ruang;
     int found = 0;
@@ -826,13 +940,16 @@ void updateRuangan(const char *kodeTarget) {
     src = fopen("ruangan.dat", "rb");
     tmp = fopen("temp.dat", "wb");
 
-    if (!src || !tmp) {
+    if (!src || !tmp)
+    {
         printf("Gagal membuka file!\n");
         return;
     }
 
-    while (fread(&ruang, sizeof(ruang), 1, src)) {
-        if (strcmp(ruang.kode, kodeTarget) == 0) {
+    while (fread(&ruang, sizeof(ruang), 1, src))
+    {
+        if (strcmp(ruang.kode, kodeTarget) == 0)
+        {
             found = 1;
 
             printf("\n=== DATA LAMA ===\n");
@@ -870,11 +987,13 @@ void updateRuangan(const char *kodeTarget) {
     fclose(src);
     fclose(tmp);
 
-    if (found) {
+    if (found)
+    {
         src = fopen("ruangan.dat", "wb");
         tmp = fopen("temp.dat", "rb");
 
-        while (fread(&ruang, sizeof(ruang), 1, tmp)) {
+        while (fread(&ruang, sizeof(ruang), 1, tmp))
+        {
             fwrite(&ruang, sizeof(ruang), 1, src);
         }
 
@@ -882,12 +1001,15 @@ void updateRuangan(const char *kodeTarget) {
         fclose(tmp);
 
         printf("Data ruangan berhasil diupdate!\n");
-    } else {
+    }
+    else
+    {
         printf("Kode %s tidak ditemukan.\n", kodeTarget);
     }
 }
 
-void hapusRuangan(const char *kodeTarget) {
+void hapusRuangan(const char *kodeTarget)
+{
     FILE *src, *tmp;
     struct Ruangan ruang;
     int found = 0;
@@ -895,7 +1017,8 @@ void hapusRuangan(const char *kodeTarget) {
     src = fopen("ruangan.dat", "rb");
     tmp = fopen("temp.dat", "wb");
 
-    if (!src || !tmp) {
+    if (!src || !tmp)
+    {
         printf("Gagal membuka file!\n");
         return;
     }
@@ -905,17 +1028,22 @@ void hapusRuangan(const char *kodeTarget) {
     scanf(" %c", &yakin);
     getchar();
 
-    if (yakin != 'Y' && yakin != 'y') {
+    if (yakin != 'Y' && yakin != 'y')
+    {
         printf("Penghapusan dibatalkan.\n");
         fclose(src);
         fclose(tmp);
         return;
     }
 
-    while (fread(&ruang, sizeof(ruang), 1, src)) {
-        if (strcmp(ruang.kode, kodeTarget) == 0) {
+    while (fread(&ruang, sizeof(ruang), 1, src))
+    {
+        if (strcmp(ruang.kode, kodeTarget) == 0)
+        {
             found = 1;
-        } else {
+        }
+        else
+        {
             fwrite(&ruang, sizeof(ruang), 1, tmp);
         }
     }
@@ -923,11 +1051,13 @@ void hapusRuangan(const char *kodeTarget) {
     fclose(src);
     fclose(tmp);
 
-    if (found) {
+    if (found)
+    {
         src = fopen("ruangan.dat", "wb");
         tmp = fopen("temp.dat", "rb");
 
-        while (fread(&ruang, sizeof(ruang), 1, tmp)) {
+        while (fread(&ruang, sizeof(ruang), 1, tmp))
+        {
             fwrite(&ruang, sizeof(ruang), 1, src);
         }
 
@@ -935,16 +1065,20 @@ void hapusRuangan(const char *kodeTarget) {
         fclose(tmp);
 
         printf("Data berhasil dihapus!\n");
-    } else {
+    }
+    else
+    {
         printf("Kode %s tidak ditemukan.\n", kodeTarget);
     }
 }
 
-void Ruangan() {
+void Ruangan()
+{
     int pilih;
     char kode[20];
 
-    do {
+    do
+    {
         printf("\n=== MENU CRUD RUANG ===\n");
         printf("1. Tambah Ruangan\n");
         printf("2. Tampilkan Ruangan\n");
@@ -955,42 +1089,42 @@ void Ruangan() {
         scanf("%d", &pilih);
         getchar();
 
-        switch (pilih) {
-            case 1:
-                tambahRuangan();
-                break;
+        switch (pilih)
+        {
+        case 1:
+            tambahRuangan();
+            break;
 
-            case 2:
-                tampilRuangan();
-                break;
+        case 2:
+            tampilRuangan();
+            break;
 
-            case 3:
-                printf("Masukkan kode ruangan yang ingin diupdate: ");
-                fgets(kode, 20, stdin);
-                kode[strcspn(kode, "\n")] = 0;
-                updateRuangan(kode);
-                break;
+        case 3:
+            printf("Masukkan kode ruangan yang ingin diupdate: ");
+            fgets(kode, 20, stdin);
+            kode[strcspn(kode, "\n")] = 0;
+            updateRuangan(kode);
+            break;
 
-            case 4:
-                printf("Masukkan kode ruangan yang ingin dihapus: ");
-                fgets(kode, 20, stdin);
-                kode[strcspn(kode, "\n")] = 0;
-                hapusRuangan(kode);
-                break;
+        case 4:
+            printf("Masukkan kode ruangan yang ingin dihapus: ");
+            fgets(kode, 20, stdin);
+            kode[strcspn(kode, "\n")] = 0;
+            hapusRuangan(kode);
+            break;
 
-            case 0:
-                printf("Keluar program.\n");
-                break;
+        case 0:
+            printf("Keluar program.\n");
+            break;
 
-            default:
-                printf("Pilihan tidak valid!\n");
+        default:
+            printf("Pilihan tidak valid!\n");
         }
 
     } while (pilih != 0);
 
-    return 0;
+    return;
 }
-
 
 // --- FUNGSI MENU UTAMA ---
 
@@ -1310,16 +1444,20 @@ void pointShop()
     } while (pilihan != 0);
 }
 
-void tambahPoinUser(char usernameTarget[], int poinTambahan) {
+void tambahPoinUser(char usernameTarget[], int poinTambahan)
+{
     FILE *fp = fopen("database/user.dat", "rb");
     FILE *fpTemp = fopen("database/temp_user.dat", "wb");
     User u;
     int found = 0;
 
-    if (fp == NULL) return;
+    if (fp == NULL)
+        return;
 
-    while (fread(&u, sizeof(User), 1, fp)) {
-        if (strcmp(u.username, usernameTarget) == 0) {
+    while (fread(&u, sizeof(User), 1, fp))
+    {
+        if (strcmp(u.username, usernameTarget) == 0)
+        {
             u.totalPoin += poinTambahan; // Tambahkan poin!
             found = 1;
         }
@@ -1329,19 +1467,23 @@ void tambahPoinUser(char usernameTarget[], int poinTambahan) {
     fclose(fp);
     fclose(fpTemp);
 
-    if (found) {
+    if (found)
+    {
         remove("database/user.dat");
         rename("database/temp_user.dat", "database/user.dat");
-    } else {
+    }
+    else
+    {
         remove("database/temp_user.dat");
     }
 }
 
-void jalankanQuiz() {
+void jalankanQuiz()
+{
     // --- 1. CONTOH DATA DUMMY (Nanti ini diambil dari Database/File) ---
     DataQuiz q;
     q.id = 1;
-    q.tipe = 1; 
+    q.tipe = 1;
     strcpy(q.soal, "Perintah printf() dalam bahasa C terdapat di library apa?");
     strcpy(q.opsiA, "stdio.h");
     strcpy(q.opsiB, "stdlib.h");
@@ -1352,13 +1494,16 @@ void jalankanQuiz() {
 
     // --- 2. TAMPILKAN LAYAR ---
     system("cls"); // Bersihkan layar
-    
+
     // Header
-    gotoxy(20, 3); printf("=== KUIS AKADEMIK ===");
-    gotoxy(20, 4); printf("Jawab dengan benar untuk dapat %d Poin!", q.poin);
+    gotoxy(20, 3);
+    printf("=== KUIS AKADEMIK ===");
+    gotoxy(20, 4);
+    printf("Jawab dengan benar untuk dapat %d Poin!", q.poin);
 
     // Tampilkan Soal
-    gotoxy(20, 6); printf("SOAL: %s", q.soal);
+    gotoxy(20, 6);
+    printf("SOAL: %s", q.soal);
 
     // --- 3. SIAPKAN MENU PILIHAN (Logika sprintf tadi) ---
     char options[4][50]; // Siapkan 4 laci kosong
@@ -1378,16 +1523,19 @@ void jalankanQuiz() {
     // Trik C: Mengubah angka (0,1,2,3) menjadi Huruf ('A','B','C','D')
     // 'A' + 0 = 'A'
     // 'A' + 1 = 'B'
-    char jawabanUser = 'A' + pilihanIndex; 
+    char jawabanUser = 'A' + pilihanIndex;
 
     // Bandingkan jawaban user dengan Kunci Jawaban
     // Kita ambil huruf pertama jawabanBenar (q.jawabanBenar[0])
-    if (jawabanUser == q.jawabanBenar[0]) {
+    if (jawabanUser == q.jawabanBenar[0])
+    {
         msgBox("BENAR!", "Selamat, jawaban kamu tepat!", GREEN);
-        currentUser.totalPoin += q.poin;
-        // Di sini nanti tambahkan logika: currentUser.poin += q.poin;
-        tambahPoinUser(currentUser.username, q.poin);
-    } else {
+        // Update points for the current user
+        dataUser[currentUserIndex].totalPoin += q.poin;
+        tambahPoinUser(dataUser[currentUserIndex].username, q.poin);
+    }
+    else
+    {
         // Tampilkan pesan salah (gunakan buffer untuk pesan custom)
         char pesanSalah[100];
         sprintf(pesanSalah, "Yah salah. Jawaban yang benar adalah %s", q.jawabanBenar);
@@ -1557,8 +1705,7 @@ int main()
     fullscreen();
     hideCursor();
     remove_scrollbar();
-
-    jumlahUser = 2;
+    system("title Study Route - Academic Management App");
 
     int pilihan;
     do
