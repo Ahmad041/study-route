@@ -13,6 +13,15 @@ typedef struct
     int role;      // 1 = Siswa, 2 = Pengajar , 3 = Pengawas
 } User;
 
+struct Ruangan
+{
+    char kode[20];
+    char namaRuangan[50];
+    int kapasitas;
+    char lokasi[30];
+    char createdAt[30];
+};
+
 typedef struct
 {
     int id;
@@ -41,7 +50,7 @@ typedef struct
 // --- DATABASE SEMENTARA (GLOBAL ARRAY) ---
 // Kita siapkan slot untuk 100 user & 5 matkul
 User dataUser[100];
-int jumlahUser = 0; // Counter user yang terdaftar
+int jumlahUser = 0;        // Counter user yang terdaftar
 int currentUserIndex = -1; // karena array di mulai dari 0 menandakan kalau belum ada user yang login
 
 // --- DATA DUMMY BARANG ---
@@ -88,20 +97,22 @@ void updateUser();
 void menuKelolaUser();
 void saveUserToDB(User);
 
-//Clear session
-void clearSession() {
+// Clear session
+void clearSession()
+{
     // 1. Wipe data user dari memori (keamanan)
     memset(&dataUser[0], 0, sizeof(User));
 
     // 2. Reset penunjuk sesi
     currentUserIndex = -1;
-    
+
     printf("Session cleared safely.\n");
 }
 
 // --- DASHBOARD SESUAI ROLE ---
 
-void dashboardSiswa(){
+void dashboardSiswa()
+{
     int pilihan;
     do
     {
@@ -148,7 +159,8 @@ void dashboardSiswa(){
     } while (1);
 }
 
-void dashboardPengajar(){
+void dashboardPengajar()
+{
     int pilihan;
     do
     {
@@ -188,7 +200,8 @@ void dashboardPengajar(){
     } while (1);
 }
 
-void dashboardPengawas(){
+void dashboardPengawas()
+{
     int pilihan;
     do
     {
@@ -231,13 +244,12 @@ void dashboardPengawas(){
     } while (1);
 }
 
-
-
 //||===================================||
 //||            CRUD USER              ||
 //||===================================||
 
-void viewUsers(){
+void viewUsers()
+{
     FILE *fp = fopen("database/user.dat", "rb");
     User u;
     int i = 1;
@@ -314,7 +326,8 @@ void adminAddUser()
     msgBox("SUKSES", "User baru berhasil ditambahkan!", GREEN);
 }
 
-void deleteUser(){
+void deleteUser()
+{
     char targetUsername[50];
     FILE *fp, *temp;
     User u;
@@ -366,7 +379,8 @@ void deleteUser(){
     }
 }
 
-void updateUser(){
+void updateUser()
+{
     char targetUsername[50];
     FILE *fp, *temp;
     User u;
@@ -433,7 +447,8 @@ void updateUser(){
     }
 }
 
-void readUserDatabase(){
+void readUserDatabase()
+{
     FILE *fuser;
     User user; // Variabel penampung sementara
     int i = 1; // Untuk nomor urut
@@ -472,7 +487,8 @@ void readUserDatabase(){
 }
 
 // Fungsi untuk menyimpan user baru ke file database
-void saveUserToDB(User newUser){
+void saveUserToDB(User newUser)
+{
     FILE *fuser;
 
     // 1. Buka file dengan mode "ab" (Append Binary)
@@ -492,7 +508,8 @@ void saveUserToDB(User newUser){
     fclose(fuser);
 }
 
-void menuKelolaUser(){
+void menuKelolaUser()
+{
     int pilihan;
     char menuCRUD[][50] = {
         "Lihat Semua User",
@@ -526,6 +543,289 @@ void menuKelolaUser(){
             return; // Kembali ke Dashboard Pengawas
         }
     } while (1);
+}
+
+
+//||===================================||
+//||            CRUD Ruangan           ||
+//||===================================||
+
+
+void tambahRuangan() {
+    FILE *file;
+    struct Ruangan ruang;
+
+    file = fopen("ruangan.dat", "ab");
+    if (!file) {
+        printf("Gagal membuka file!\n");
+        return;
+    }
+
+    printf("Masukkan Kode Ruangan     : ");
+    fgets(ruang.kode, sizeof(ruang.kode), stdin);
+    ruang.kode[strcspn(ruang.kode, "\n")] = 0;
+
+    printf("Masukkan Nama Ruangan     : ");
+    fgets(ruang.namaRuangan, sizeof(ruang.namaRuangan), stdin);
+    ruang.namaRuangan[strcspn(ruang.namaRuangan, "\n")] = 0;
+
+    printf("Masukkan Kapasitas        : ");
+    scanf("%d", &ruang.kapasitas);
+    getchar();
+
+    printf("Masukkan Lokasi (Lantai)  : ");
+    fgets(ruang.lokasi, sizeof(ruang.lokasi), stdin);
+    ruang.lokasi[strcspn(ruang.lokasi, "\n")] = 0;
+
+    printf("Masukkan Created At       : ");
+    fgets(ruang.createdAt, sizeof(ruang.createdAt), stdin);
+    ruang.createdAt[strcspn(ruang.createdAt, "\n")] = 0;
+
+    fwrite(&ruang, sizeof(ruang), 1, file);
+    fclose(file);
+
+    printf("Ruangan berhasil ditambahkan!\n");
+}
+
+void tampilRuangan() {
+    FILE *file;
+    struct Ruangan ruang;
+
+    file = fopen("ruangan.dat", "rb");
+    if (!file) {
+        printf("File belum ada atau gagal dibuka.\n");
+        return;
+    }
+
+    printf("\n=== DATA RUANGAN ===\n");
+    while (fread(&ruang, sizeof(ruang), 1, file)) {
+        printf("Kode        : %s\n", ruang.kode);
+        printf("Nama        : %s\n", ruang.namaRuangan);
+        printf("Kapasitas   : %d\n", ruang.kapasitas);
+        printf("Lokasi      : %s\n", ruang.lokasi);
+        printf("Created At  : %s\n\n", ruang.createdAt);
+    }
+
+    fclose(file);
+}
+
+void updateRuangan(const char *kodeTarget) {
+    FILE *src, *tmp;
+    struct Ruangan ruang;
+    int found = 0;
+
+    src = fopen("ruangan.dat", "rb");
+    tmp = fopen("temp.dat", "wb");
+
+    if (!src || !tmp) {
+        printf("Gagal membuka file!\n");
+        return;
+    }
+
+    while (fread(&ruang, sizeof(ruang), 1, src)) {
+        if (strcmp(ruang.kode, kodeTarget) == 0) {
+            found = 1;
+
+            printf("\n=== DATA LAMA ===\n");
+            printf("Kode        : %s\n", ruang.kode);
+            printf("Nama        : %s\n", ruang.namaRuangan);
+            printf("Kapasitas   : %d\n", ruang.kapasitas);
+            printf("Lokasi      : %s\n", ruang.lokasi);
+
+            printf("\n=== UPDATE DATA ===\n");
+
+            printf("Masukkan Kode Baru               : ");
+            fgets(ruang.kode, sizeof(ruang.kode), stdin);
+            ruang.kode[strcspn(ruang.kode, "\n")] = 0;
+
+            printf("Masukkan Nama ruangan Baru       : ");
+            fgets(ruang.namaRuangan, sizeof(ruang.namaRuangan), stdin);
+            ruang.namaRuangan[strcspn(ruang.namaRuangan, "\n")] = 0;
+
+            printf("Masukkan Kapasitas Baru          : ");
+            scanf("%d", &ruang.kapasitas);
+            getchar();
+
+            printf("Masukkan Lokasi Baru             : ");
+            fgets(ruang.lokasi, sizeof(ruang.lokasi), stdin);
+            ruang.lokasi[strcspn(ruang.lokasi, "\n")] = 0;
+
+            printf("Masukkan CreatedAt Baru          : ");
+            fgets(ruang.createdAt, sizeof(ruang.createdAt), stdin);
+            ruang.createdAt[strcspn(ruang.createdAt, "\n")] = 0;
+        }
+
+        fwrite(&ruang, sizeof(ruang), 1, tmp);
+    }
+
+    fclose(src);
+    fclose(tmp);
+
+    if (found) {
+        src = fopen("ruangan.dat", "wb");
+        tmp = fopen("temp.dat", "rb");
+
+        while (fread(&ruang, sizeof(ruang), 1, tmp)) {
+            fwrite(&ruang, sizeof(ruang), 1, src);
+        }
+
+        fclose(src);
+        fclose(tmp);
+
+        printf("Data ruangan berhasil diupdate!\n");
+    } else {
+        printf("Kode %s tidak ditemukan.\n", kodeTarget);
+    }
+}
+
+void hapusRuangan(const char *kodeTarget) {
+    FILE *src, *tmp;
+    struct Ruangan ruang;
+    int found = 0;
+
+    src = fopen("ruangan.dat", "rb");
+    tmp = fopen("temp.dat", "wb");
+
+    if (!src || !tmp) {
+        printf("Gagal membuka file!\n");
+        return;
+    }
+
+    char yakin;
+    printf("Apakah yakin ingin menghapus? (Y/N): ");
+    scanf(" %c", &yakin);
+    getchar();
+
+    if (yakin != 'Y' && yakin != 'y') {
+        printf("Penghapusan dibatalkan.\n");
+        fclose(src);
+        fclose(tmp);
+        return;
+    }
+
+    while (fread(&ruang, sizeof(ruang), 1, src)) {
+        if (strcmp(ruang.kode, kodeTarget) == 0) {
+            found = 1;
+        } else {
+            fwrite(&ruang, sizeof(ruang), 1, tmp);
+        }
+    }
+
+    fclose(src);
+    fclose(tmp);
+
+    if (found) {
+        src = fopen("ruangan.dat", "wb");
+        tmp = fopen("temp.dat", "rb");
+
+        while (fread(&ruang, sizeof(ruang), 1, tmp)) {
+            fwrite(&ruang, sizeof(ruang), 1, src);
+        }
+
+        fclose(src);
+        fclose(tmp);
+
+        printf("Data berhasil dihapus!\n");
+    } else {
+        printf("Kode %s tidak ditemukan.\n", kodeTarget);
+    }
+}
+
+void moveRuangan(const char *kodeTarget) {
+    FILE *src, *dest, *tmp;
+    struct Ruangan ruang;
+    int found = 0;
+
+    src  = fopen("ruangan.dat", "rb");
+    tmp  = fopen("temp.dat", "wb");
+    dest = fopen("ruanganMoved.dat", "ab");
+
+    if (!src || !tmp || !dest) {
+        printf("Gagal membuka file!\n");
+        return;
+    }
+
+    while (fread(&ruang, sizeof(ruang), 1, src)) {
+        if (strcmp(ruang.kode, kodeTarget) == 0) {
+            found = 1;
+            fwrite(&ruang, sizeof(ruang), 1, dest);
+        } else {
+            fwrite(&ruang, sizeof(ruang), 1, tmp);
+        }
+    }
+
+    fclose(src);
+    fclose(tmp);
+    fclose(dest);
+
+    if (found) {
+        src = fopen("ruangan.dat", "wb");
+        tmp = fopen("temp.dat", "rb");
+
+        while (fread(&ruang, sizeof(ruang), 1, tmp)) {
+            fwrite(&ruang, sizeof(ruang), 1, src);
+        }
+
+        fclose(src);
+        fclose(tmp);
+
+        printf("Data berhasil dipindahkan!\n");
+    } else {
+        printf("Kode %s tidak ditemukan.\n", kodeTarget);
+    }
+}
+
+
+
+void Ruangan() {
+    int pilih;
+    char kode[20];
+
+    do {
+        printf("\n=== MENU CRUD RUANG ===\n");
+        printf("1. Tambah Ruangan\n");
+        printf("2. Tampilkan Ruangan\n");
+        printf("3. Update Ruangan\n");
+        printf("4. Hapus Ruangan\n");
+        printf("0. Keluar\n");
+        printf("Pilih menu : ");
+        scanf("%d", &pilih);
+        getchar();
+
+        switch (pilih) {
+            case 1:
+                tambahRuangan();
+                break;
+
+            case 2:
+                tampilRuangan();
+                break;
+
+            case 3:
+                printf("Masukkan kode ruangan yang ingin diupdate: ");
+                fgets(kode, 20, stdin);
+                kode[strcspn(kode, "\n")] = 0;
+                updateRuangan(kode);
+                break;
+
+            case 4:
+                printf("Masukkan kode ruangan yang ingin dihapus: ");
+                fgets(kode, 20, stdin);
+                kode[strcspn(kode, "\n")] = 0;
+                hapusRuangan(kode);
+                break;
+                
+            case 0:
+                printf("Keluar program.\n");
+                break;
+
+            default:
+                printf("Pilihan tidak valid!\n");
+        }
+
+    } while (pilih != 0);
+
+    return 0;
 }
 
 
@@ -847,7 +1147,6 @@ void pointShop()
     } while (pilihan != 0);
 }
 
-
 // Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
 
 //||==========================================||
@@ -993,7 +1292,6 @@ void exitProgram()
     getch();
     exit(0);
 }
-
 
 void About()
 {

@@ -261,6 +261,7 @@ int drawMenu(int x, int y, char options[][50], int totalOption) {
         key = getch();
 
         if(key == UP_ARROW) {
+            printf("\a");
             selected--;
             if(selected < 0) selected = totalOption - 1;
         } else if(key == DOWN_ARROW) {
