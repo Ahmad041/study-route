@@ -15,7 +15,7 @@ typedef struct {
     char jawabanBenar[50]; // Kunci jawaban (misal: "A" atau kata kunci essay)
     int poin;           // Nilai jika benar
 } DataQuiz;
-
+User currentUser;
 typedef struct
 {
     char username[50];
@@ -178,8 +178,7 @@ void dashboardSiswa()
     } while (1);
 }
 
-void dashboardPengajar()
-{
+void dashboardPengajar(){
     int pilihan;
     do
     {
@@ -219,8 +218,7 @@ void dashboardPengajar()
     } while (1);
 }
 
-void dashboardPengawas()
-{
+void dashboardPengawas(){
     int pilihan;
     do
     {
@@ -1312,6 +1310,32 @@ void pointShop()
     } while (pilihan != 0);
 }
 
+void tambahPoinUser(char usernameTarget[], int poinTambahan) {
+    FILE *fp = fopen("database/user.dat", "rb");
+    FILE *fpTemp = fopen("database/temp_user.dat", "wb");
+    User u;
+    int found = 0;
+
+    if (fp == NULL) return;
+
+    while (fread(&u, sizeof(User), 1, fp)) {
+        if (strcmp(u.username, usernameTarget) == 0) {
+            u.totalPoin += poinTambahan; // Tambahkan poin!
+            found = 1;
+        }
+        fwrite(&u, sizeof(User), 1, fpTemp);
+    }
+
+    fclose(fp);
+    fclose(fpTemp);
+
+    if (found) {
+        remove("database/user.dat");
+        rename("database/temp_user.dat", "database/user.dat");
+    } else {
+        remove("database/temp_user.dat");
+    }
+}
 
 void jalankanQuiz() {
     // --- 1. CONTOH DATA DUMMY (Nanti ini diambil dari Database/File) ---
@@ -1360,7 +1384,9 @@ void jalankanQuiz() {
     // Kita ambil huruf pertama jawabanBenar (q.jawabanBenar[0])
     if (jawabanUser == q.jawabanBenar[0]) {
         msgBox("BENAR!", "Selamat, jawaban kamu tepat!", GREEN);
+        currentUser.totalPoin += q.poin;
         // Di sini nanti tambahkan logika: currentUser.poin += q.poin;
+        tambahPoinUser(currentUser.username, q.poin);
     } else {
         // Tampilkan pesan salah (gunakan buffer untuk pesan custom)
         char pesanSalah[100];
