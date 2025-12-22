@@ -240,7 +240,7 @@ void msgBox(char *title, char *message, int color) {
 }
 
 // [UPGRADE] Menu Interaktif (Return index pilihan: 0, 1, 2...)
-int drawMenu(int x, int y, char options[][50], int totalOption) {
+int drawMenu(int x, int y, char options[][60], int totalOption) {
     int selected = 0;
     int key;
 

@@ -68,19 +68,6 @@ int jumlahUser = 0;        // Counter user yang terdaftar
 int currentUserIndex = -1; // karena array di mulai dari 0 menandakan kalau belum ada user yang login
 
 // --- DATA DUMMY BARANG ---
-ItemShop daftarItem[5] = {
-    {1, "Voucher Kantin 10k", 50, 20},
-    {2, "Notebook Study Route", 100, 10},
-    {3, "Sticker Pack Programming", 20, 50},
-    {4, "Kaos 'C Programmer'", 300, 5},
-    {5, "Akses Modul Premium", 150, 99}};
-
-MataKuliah daftarMatkul[5] = {
-    {1, "Algoritma Pemrograman", "Senin"},
-    {2, "Struktur Data", "Selasa"},
-    {3, "Basis Data", "Rabu"},
-    {4, "Pemrograman Web", "Kamis"},
-    {5, "Jaringan Komputer", "Jumat"}};
 
 Pengajar daftarPengajar[5] = {
     {101, "Prof. Budi Santoso", "Algoritma & C++", 4.9, "Available"},
@@ -93,8 +80,7 @@ Pengajar daftarPengajar[5] = {
 
 // --- PROTOTYPE FUNGSI ---
 
-
-//User Management
+// User Management
 void viewUser();
 void adminAddUser();
 void deleteUser();
@@ -102,33 +88,43 @@ void updateUser();
 void menuKelolaUser();
 void saveUserToDB(User);
 
-//Logout and Login
+// Logout and Login
 void About();
 void exitProgram();
 void Register();
 int loginProcess();
 void clearSession();
 
-//Fitur Utama
+// Fitur Utama
 void leaderboard();
 void absen();
 void reservasi();
 void jalankanQuiz();
 void pointShop();
 void reservasi();
-void pelatih(); 
+void pelatih();
+void tambahPoinUser(char usernameTarget[], int poinTambahan);
 
-//Dashboard functions
+// Dashboard functions
 void dashboardSiswa();
 void dashboardPengajar();
 void dashboardPengawas();
 
-//Quiz functions
+// Quiz functions
 void menuKelolaQuiz();
 void tambahQuiz();
 void lihatSemuaQuiz();
 void hapusQuiz();
 void editQuiz();
+
+// Shop functions
+void menuKelolaShop();
+void lihatSemuaItem();
+void tambahItemShop();
+void hapusItemShop();
+
+// Ruangan functions
+void Ruangan();
 
 
 // Clear session
@@ -143,6 +139,27 @@ void clearSession()
     printf("Session cleared safely.\n");
 }
 
+
+// Point Shop
+void checkShopDatabase() {
+    FILE *fp = fopen("database/shop.dat", "rb");
+    if (fp == NULL) {
+        // File belum ada, kita buatkan data awal (Default)
+        fp = fopen("database/shop.dat", "wb");
+        
+        ItemShop defaultItems[3] = {
+            {1, "Voucher Kantin 10k", 50, 20},
+            {2, "Sticker Pack C++", 25, 50},
+            {3, "Kaos Programmer", 300, 5}
+        };
+        
+        fwrite(defaultItems, sizeof(ItemShop), 3, fp);
+        printf("Database Shop berhasil diinisialisasi!\n");
+        fclose(fp);
+    } else {
+        fclose(fp);
+    }
+}
 // --- DASHBOARD SESUAI ROLE ---
 
 void dashboardSiswa()
@@ -158,7 +175,7 @@ void dashboardSiswa()
         printf("=========================================\n");
 
         // Menu Khusus Siswa
-        char menuSiswa[][50] = {
+        char menuSiswa[][60] = {
             "Absensi Kelas",
             "Reservasi Pengajar",
             "Download Modul",
@@ -193,7 +210,8 @@ void dashboardSiswa()
     } while (1);
 }
 
-void dashboardPengajar(){
+void dashboardPengajar()
+{
     int pilihan;
     do
     {
@@ -203,7 +221,7 @@ void dashboardPengajar(){
         printf(" Saldo Poin: %d \n", dataUser[currentUserIndex].totalPoin);
         printf("=========================================\n");
 
-        char menuPengajar[][50] = {
+        char menuPengajar[][60] = {
             "Jadwal Mengajar",
             "Kelola Quiz",
             "Reservasi Ruangan",
@@ -233,7 +251,8 @@ void dashboardPengajar(){
     } while (1);
 }
 
-void dashboardPengawas(){
+void dashboardPengawas()
+{
     int pilihan;
     do
     {
@@ -242,7 +261,7 @@ void dashboardPengawas(){
         gotoxy(4, 4);
         printf("User: %s (Super Admin)", dataUser[currentUserIndex].username);
 
-        char menuAdmin[][50] = {
+        char menuAdmin[][60] = {
             "CRUD Akun User",
             "CRUD Mata Kuliah",
             "CRUD Ruangan",
@@ -261,17 +280,138 @@ void dashboardPengawas(){
             msgBox("INFO", "Menu Kelola Matkul (Next Step)", RED);
             break;
         case 2:
-            msgBox("INFO", "Menu Kelola Ruangan (Next Step)", RED);
+            Ruangan();
             break;
         case 3:
             msgBox("INFO", "Menu Kelola Modul (Next Step)", RED);
             break;
         case 4:
-            msgBox("INFO", "Menu Kelola Shop (Next Step)", RED);
+            menuKelolaShop();
             break;
         case 5:
             clearSession();
             return;
+        }
+    } while (1);
+}
+
+
+//||===================================||
+//||            CRUD SHOP              ||
+//||===================================||
+
+void lihatSemuaItem() {
+    FILE *fp = fopen("database/shop.dat", "rb");
+    ItemShop item;
+    
+    system("cls");
+    printf("=== DAFTAR BARANG TOKO ===\n");
+    printf("%-3s | %-25s | %-6s | %-5s\n", "ID", "Nama Item", "Harga", "Stok");
+    printf("--------------------------------------------------\n");
+    
+    if (fp != NULL) {
+        while (fread(&item, sizeof(ItemShop), 1, fp)) {
+            printf("%-3d | %-25s | %-6d | %-5d\n", 
+                   item.id, item.namaItem, item.hargaPoin, item.stok);
+        }
+        fclose(fp);
+    }
+    printf("--------------------------------------------------\n");
+}
+
+void tambahItemShop() {
+    ItemShop newItem, temp;
+    FILE *fp;
+    int lastId = 0;
+
+    system("cls");
+    printf("=== TAMBAH BARANG BARU ===\n");
+
+    // Auto ID
+    fp = fopen("database/shop.dat", "rb");
+    if (fp != NULL) {
+        while (fread(&temp, sizeof(ItemShop), 1, fp)) {
+            lastId = temp.id;
+        }
+        fclose(fp);
+    }
+    newItem.id = lastId + 1;
+    printf("ID Barang: %d (Auto)\n", newItem.id);
+
+    printf("Nama Barang: "); 
+    scanf(" %[^\n]", newItem.namaItem); // Trik scanf spasi
+    
+    printf("Harga (Poin): "); 
+    scanf("%d", &newItem.hargaPoin);
+    
+    printf("Stok Awal: "); 
+    scanf("%d", &newItem.stok);
+
+    // Simpan
+    fp = fopen("database/shop.dat", "ab");
+    fwrite(&newItem, sizeof(ItemShop), 1, fp);
+    fclose(fp);
+    
+    msgBox("SUKSES", "Barang baru berhasil ditambahkan!", GREEN);
+}
+
+void hapusItemShop() {
+    FILE *fp, *fpTemp;
+    ItemShop item;
+    int idHapus, found = 0;
+
+    system("cls");
+    lihatSemuaItem();
+    printf("\nMasukkan ID Barang yang akan DIHAPUS (0 Batal): ");
+    scanf("%d", &idHapus);
+
+    if (idHapus == 0) return;
+
+    fp = fopen("database/shop.dat", "rb");
+    fpTemp = fopen("database/temp_shop.dat", "wb");
+
+    if (fp == NULL) return;
+
+    while (fread(&item, sizeof(ItemShop), 1, fp)) {
+        if (item.id == idHapus) {
+            found = 1;
+        } else {
+            fwrite(&item, sizeof(ItemShop), 1, fpTemp);
+        }
+    }
+
+    fclose(fp);
+    fclose(fpTemp);
+
+    if (found) {
+        remove("database/shop.dat");
+        rename("database/temp_shop.dat", "database/shop.dat");
+        msgBox("SUKSES", "Barang berhasil dihapus!", GREEN);
+    } else {
+        remove("database/temp_shop.dat");
+        msgBox("GAGAL", "ID Barang tidak ditemukan.", RED);
+    }
+}
+
+void menuKelolaShop() {
+    int pilihan;
+    char menu[][60] = {
+        "Lihat Daftar Barang",
+        "Tambah Barang Baru",
+        "Hapus Barang",
+        "Kembali"
+    };
+
+    do {
+        system("cls");
+        drawBoxWithShadow(5, 2, 40, 3, "KELOLA SHOP (ADMIN)");
+        pilihan = drawMenu(5, 7, menu, 4);
+
+        switch (pilihan) {
+            case 0: lihatSemuaItem(); getch(); break;
+            case 1: tambahItemShop(); break;
+            case 2: hapusItemShop(); break;
+            case 3: return;
         }
     } while (1);
 }
@@ -283,7 +423,7 @@ void dashboardPengawas(){
 void menuKelolaQuiz()
 {
     int pilihan;
-    char menuCRUD[][50] = {
+    char menuCRUD[][60] = {
         "Tambah Quiz Baru",
         "Lihat Semua Quiz",
         "Edit Quiz",
@@ -830,7 +970,7 @@ void saveUserToDB(User newUser)
 void menuKelolaUser()
 {
     int pilihan;
-    char menuCRUD[][50] = {
+    char menuCRUD[][60] = {
         "Lihat Semua User",
         "Tambah User Baru",
         "Edit Data User",
@@ -1358,13 +1498,30 @@ void reservasi()
     getch();
 }
 
-void pointShop()
-{
+void pointShop() {
+    FILE *fp;
+    ItemShop item;
+    ItemShop daftarBelanja[50]; // Buffer RAM sementara
+    int totalBarang = 0;
     int pilihan, konfirmasi;
+    int found = 0;
 
-    // Loop agar user bisa belanja berkali-kali sampai memilih keluar
-    do
-    {
+    do {
+        // 1. LOAD DATA DARI FILE KE RAM
+        // Kenapa diload dulu? Agar mudah menampilkan menu & memilih index
+        totalBarang = 0;
+        fp = fopen("database/shop.dat", "rb");
+        if (fp == NULL) {
+            msgBox("MAAF", "Toko sedang tutup (Database missing).", RED);
+            return;
+        }
+        while (fread(&item, sizeof(ItemShop), 1, fp)) {
+            daftarBelanja[totalBarang] = item;
+            totalBarang++;
+        }
+        fclose(fp);
+
+        // 2. TAMPILKAN MENU
         system("cls");
         printf("=========================================\n");
         printf("\tPOINT SHOP (Saldo Anda: %d Poin)\n", dataUser[currentUserIndex].totalPoin);
@@ -1372,74 +1529,67 @@ void pointShop()
         printf("%-3s | %-25s | %-8s | %-5s\n", "ID", "Nama Item", "Harga", "Stok");
         printf("--------------------------------------------------\n");
 
-        for (int i = 0; i < 5; i++)
-        {
-            printf("%-3d | %-25s | %-8d | %-5d\n",
-                   daftarItem[i].id,
-                   daftarItem[i].namaItem,
-                   daftarItem[i].hargaPoin,
-                   daftarItem[i].stok);
+        for (int i = 0; i < totalBarang; i++) {
+             printf("%-3d | %-25s | %-8d | %-5d\n", 
+                   daftarBelanja[i].id, 
+                   daftarBelanja[i].namaItem, 
+                   daftarBelanja[i].hargaPoin, 
+                   daftarBelanja[i].stok);
         }
         printf("--------------------------------------------------\n");
         printf("0. Kembali ke Dashboard\n");
         printf("Pilih ID Barang yang ingin dibeli: ");
+        scanf("%d", &pilihan);
+        
+        if (pilihan == 0) return;
 
-        if (scanf("%d", &pilihan) != 1)
-        {
-            while (getchar() != '\n')
-                ;
-            pilihan = -1;
+        // 3. CARI BARANG YANG DIPILIH
+        int indexDipilih = -1;
+        for(int i=0; i<totalBarang; i++){
+            if(daftarBelanja[i].id == pilihan) {
+                indexDipilih = i;
+                break;
+            }
         }
 
-        if (pilihan == 0)
-            return; // Kembali ke menu utama
+        // 4. PROSES TRANSAKSI
+        if (indexDipilih != -1) {
+            ItemShop barang = daftarBelanja[indexDipilih];
 
-        // LOGIKA TRANSAKSI
-        if (pilihan >= 1 && pilihan <= 5)
-        {
-            int indexBarang = pilihan - 1; // Array mulai dari 0
-
-            // 1. Cek Apakah Stok Ada?
-            if (daftarItem[indexBarang].stok <= 0)
-            {
-                printf("\n[GAGAL] Stok barang habis!\n");
+            if (barang.stok <= 0) {
+                 msgBox("GAGAL", "Stok barang habis!", RED);
+            } 
+            else if (dataUser[currentUserIndex].totalPoin < barang.hargaPoin) {
+                 msgBox("MISKIN", "Poin tidak cukup!", RED);
             }
-            // 2. Cek Apakah Poin Cukup?
-            else if (dataUser[currentUserIndex].totalPoin < daftarItem[indexBarang].hargaPoin)
-            {
-                printf("\n[GAGAL] Poin Anda tidak cukup! (Butuh: %d, Punya: %d)\n",
-                       daftarItem[indexBarang].hargaPoin, dataUser[currentUserIndex].totalPoin);
-            }
-            // 3. Jika Valid, Lakukan Transaksi
-            else
-            {
-                printf("\nAnda akan membeli '%s' seharga %d Poin.\n",
-                       daftarItem[indexBarang].namaItem, daftarItem[indexBarang].hargaPoin);
-                printf("Tekan 1 untuk Konfirmasi, 0 untuk Batal: ");
+            else {
+                // Konfirmasi
+                printf("\nBeli '%s' seharga %d Poin? (1=Ya, 0=Batal): ", barang.namaItem, barang.hargaPoin);
                 scanf("%d", &konfirmasi);
 
-                if (konfirmasi == 1)
-                {
-                    // Kurangi Poin User
-                    dataUser[currentUserIndex].totalPoin -= daftarItem[indexBarang].hargaPoin;
-                    // Kurangi Stok Barang
-                    daftarItem[indexBarang].stok -= 1;
+                if (konfirmasi == 1) {
+                    // A. Update RAM (User)
+                    dataUser[currentUserIndex].totalPoin -= barang.hargaPoin;
+                    
+                    // B. Update Database User (PENTING)
+                    tambahPoinUser(dataUser[currentUserIndex].username, -barang.hargaPoin); // Minus untuk mengurangi
 
-                    printf("\n[SUKSES] Pembelian berhasil! Sisa poin Anda: %d\n", dataUser[currentUserIndex].totalPoin);
-                }
-                else
-                {
-                    printf("\nPembelian dibatalkan.\n");
+                    // C. Update Database Shop (Kurangi Stok)
+                    // Teknik: Update di Array RAM -> Tulis Ulang Semua ke File
+                    daftarBelanja[indexDipilih].stok -= 1; // Kurangi stok di RAM
+                    
+                    fp = fopen("database/shop.dat", "wb"); // Mode wb (Write Binary) menimpa file lama
+                    for(int i=0; i<totalBarang; i++){
+                        fwrite(&daftarBelanja[i], sizeof(ItemShop), 1, fp);
+                    }
+                    fclose(fp);
+
+                    msgBox("SUKSES", "Pembelian berhasil! Barang masuk inventori.", GREEN);
                 }
             }
+        } else {
+            msgBox("ERROR", "ID Barang tidak ditemukan.", RED);
         }
-        else
-        {
-            printf("\nItem tidak ditemukan.\n");
-        }
-
-        printf("\nTekan tombol apa saja untuk lanjut...");
-        getch();
 
     } while (pilihan != 0);
 }
@@ -1480,74 +1630,121 @@ void tambahPoinUser(char usernameTarget[], int poinTambahan)
 
 void jalankanQuiz()
 {
-    // --- 1. CONTOH DATA DUMMY (Nanti ini diambil dari Database/File) ---
+    FILE *fp;
     DataQuiz q;
-    q.id = 1;
-    q.tipe = 1;
-    strcpy(q.soal, "Perintah printf() dalam bahasa C terdapat di library apa?");
-    strcpy(q.opsiA, "stdio.h");
-    strcpy(q.opsiB, "stdlib.h");
-    strcpy(q.opsiC, "string.h");
-    strcpy(q.opsiD, "conio.h");
-    strcpy(q.jawabanBenar, "A"); // Kunci Jawaban
-    q.poin = 10;
+    DataQuiz daftarSoal[100]; // Wadah untuk menampung semua soal dari file
+    int totalSoal = 0;
 
-    // --- 2. TAMPILKAN LAYAR ---
-    system("cls"); // Bersihkan layar
+    // --- 1. BACA DATABASE QUIZ ---
+    fp = fopen("database/quiz.dat", "rb");
+    if (fp == NULL)
+    {
+        msgBox("MAAF", "Belum ada kuis yang tersedia saat ini.", BLUE);
+        return;
+    }
+
+    // Masukkan semua soal dari file ke dalam Array RAM
+    while (fread(&q, sizeof(DataQuiz), 1, fp))
+    {
+        daftarSoal[totalSoal] = q;
+        totalSoal++;
+    }
+    fclose(fp);
+
+    if (totalSoal == 0)
+    {
+        msgBox("KOSONG", "Bank soal masih kosong.", RED);
+        return;
+    }
+
+    // --- 2. PILIH SOAL ACAK (RANDOM) ---
+    // Gunakan fungsi rand()
+    int randomIndex = rand() % totalSoal;
+    DataQuiz soalTerpilih = daftarSoal[randomIndex];
+
+    // --- 3. TAMPILKAN UI ---
+    system("cls");
 
     // Header
     gotoxy(20, 3);
     printf("=== KUIS AKADEMIK ===");
     gotoxy(20, 4);
-    printf("Jawab dengan benar untuk dapat %d Poin!", q.poin);
+    printf("Poin Hadiah: %d", soalTerpilih.poin);
+    gotoxy(20, 5);
+    printf("Tipe: %s", (soalTerpilih.tipe == 1) ? "Pilihan Ganda" : "Essay");
 
     // Tampilkan Soal
-    gotoxy(20, 6);
-    printf("SOAL: %s", q.soal);
+    gotoxy(20, 7);
+    printf("SOAL: %s", soalTerpilih.soal);
 
-    // --- 3. SIAPKAN MENU PILIHAN (Logika sprintf tadi) ---
-    char options[4][50]; // Siapkan 4 laci kosong
+    // --- 4. LOGIKA BERDASARKAN TIPE ---
 
-    // Isi laci satu per satu
-    sprintf(options[0], "A. %-20s", q.opsiA);
-    sprintf(options[1], "B. %-20s", q.opsiB);
-    sprintf(options[2], "C. %-20s", q.opsiC);
-    sprintf(options[3], "D. %-20s", q.opsiD);
-
-    // --- 4. TAMPILKAN MENU INTERAKTIF ---
-    // User memilih menggunakan panah atas/bawah
-    // drawMenu mengembalikan angka: 0 untuk A, 1 untuk B, dst.
-    int pilihanIndex = drawMenu(20, 8, options, 4);
-
-    // --- 5. CEK JAWABAN ---
-    // Trik C: Mengubah angka (0,1,2,3) menjadi Huruf ('A','B','C','D')
-    // 'A' + 0 = 'A'
-    // 'A' + 1 = 'B'
-    char jawabanUser = 'A' + pilihanIndex;
-
-    // Bandingkan jawaban user dengan Kunci Jawaban
-    // Kita ambil huruf pertama jawabanBenar (q.jawabanBenar[0])
-    if (jawabanUser == q.jawabanBenar[0])
+    if (soalTerpilih.tipe == 1)
     {
-        msgBox("BENAR!", "Selamat, jawaban kamu tepat!", GREEN);
-        // Update points for the current user
-        dataUser[currentUserIndex].totalPoin += q.poin;
-        tambahPoinUser(dataUser[currentUserIndex].username, q.poin);
+        // === LOGIKA PILIHAN GANDA ===
+        char options[4][60];
+
+        sprintf(options[0], "A. %-20s", soalTerpilih.opsiA);
+        sprintf(options[1], "B. %-20s", soalTerpilih.opsiB);
+        sprintf(options[2], "C. %-20s", soalTerpilih.opsiC);
+        sprintf(options[3], "D. %-20s", soalTerpilih.opsiD);
+
+        int pilihanIndex = drawMenu(20, 9, options, 4);
+        char jawabanUser = 'A' + pilihanIndex;
+
+        // Cek Jawaban (Huruf pertama saja yang dicek)
+        if (jawabanUser == soalTerpilih.jawabanBenar[0])
+        {
+            msgBox("BENAR!", "Selamat, jawaban kamu tepat!", GREEN);
+
+            // Update RAM & Database
+            dataUser[currentUserIndex].totalPoin += soalTerpilih.poin;
+            tambahPoinUser(dataUser[currentUserIndex].username, soalTerpilih.poin);
+        }
+        else
+        {
+            char pesanSalah[100];
+            sprintf(pesanSalah, "Salah. Jawaban benar: %s", soalTerpilih.jawabanBenar);
+            msgBox("SALAH", pesanSalah, RED);
+        }
     }
     else
     {
-        // Tampilkan pesan salah (gunakan buffer untuk pesan custom)
-        char pesanSalah[100];
-        sprintf(pesanSalah, "Yah salah. Jawaban yang benar adalah %s", q.jawabanBenar);
-        msgBox("SALAH", pesanSalah, RED);
+        // === LOGIKA ESSAY ===
+        char jawabanEssay[100];
+
+        gotoxy(20, 9);
+        printf("Jawaban Kamu (Satu Kata/Singkat):");
+        gotoxy(20, 10);
+        printf(">> ");
+
+        // Membaca input kalimat (Scanf trik untuk spasi)
+        scanf(" %[^\n]", jawabanEssay);
+
+        // Cek Jawaban (Case Insensitive Manual)
+        // Kita gunakan strcmpi (Windows) atau strcasecmp (Linux/GCC)
+        // Jika error, pakai strcmp biasa tapi user harus teliti huruf besar/kecil
+        if (strcasecmp(jawabanEssay, soalTerpilih.jawabanBenar) == 0)
+        {
+            msgBox("HEBAT!", "Jawaban Essay kamu Tepat!", GREEN);
+
+            dataUser[currentUserIndex].totalPoin += soalTerpilih.poin;
+            tambahPoinUser(dataUser[currentUserIndex].username, soalTerpilih.poin);
+        }
+        else
+        {
+            char pesanSalah[100];
+            sprintf(pesanSalah, "Kurang tepat. Kunci: %s", soalTerpilih.jawabanBenar);
+            msgBox("SALAH", pesanSalah, RED);
+        }
     }
 }
-// Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
 
 //||==========================================||
 //||                Ini Login                 ||
 //||==========================================||
 
+// Fungsi Login mengembalikan 1 jika sukses, 0 jika gagal
 int loginProcess()
 {
     char username[50], password[50];
@@ -1703,8 +1900,10 @@ int main()
 {
 
     fullscreen();
+    srand(time(0));
     hideCursor();
     remove_scrollbar();
+    checkShopDatabase();
     system("title Study Route - Academic Management App");
 
     int pilihan;
