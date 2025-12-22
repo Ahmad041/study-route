@@ -3,11 +3,12 @@
 
 typedef char string[50];
 
-typedef struct {
+typedef struct
+{
     int id;
-    int idMatkul;       // Supaya tahu ini modul pelajaran apa
+    int idMatkul; // Supaya tahu ini modul pelajaran apa
     char namaModul[50];
-    char link[200];     // Link URL biasanya panjang
+    char link[200]; // Link URL biasanya panjang
 } ModulMateri;
 
 typedef struct
@@ -47,6 +48,7 @@ typedef struct
 {
     int id;
     char nama[50];
+    char username[50];
     char spesialisasi[50];
     float rating;
     char status[50];
@@ -75,13 +77,6 @@ int jumlahUser = 0;        // Counter user yang terdaftar
 int currentUserIndex = -1; // karena array di mulai dari 0 menandakan kalau belum ada user yang login
 
 // --- DATA DUMMY BARANG ---
-
-Pengajar daftarPengajar[5] = {
-    {101, "Prof. Budi Santoso", "Algoritma & C++", 4.9, "Available"},
-    {102, "Dr. Siti Aminah", "Web Dev (Laravel)", 4.8, "Busy"},
-    {103, "Pak Anton Wijaya", "IoT & Embedded", 4.7, "Available"},
-    {104, "Kak Dinda Pertiwi", "Frontend (React)", 4.5, "Available"},
-    {105, "Pak Rudi Hermawan", "Dasar Programming", 4.2, "In Class"}};
 
 // Variable untuk sesi login saat ini
 
@@ -133,6 +128,16 @@ void hapusItemShop();
 // Ruangan functions
 void Ruangan();
 
+// Pengajar functions
+void menuKelolaPengajar();
+void lihatSemuaMatkul();
+
+// Modul functions
+void menuKelolaModul();
+void downloadModul();
+
+// Matkul functions
+void menuKelolaMatkul();
 
 // Clear session
 void clearSession()
@@ -146,62 +151,111 @@ void clearSession()
     printf("Session cleared safely.\n");
 }
 
+void showLogo()
+{
+    system("cls");
+    setColor(BLACK, AQUA); // Background Hitam, Teks Cyan (Butuh fungsi setColor di lib.h)
+    printf("\n");
+    printf("  ██████  ████████ ██    ██ ██████  ██    ██ \n");
+    printf("  ██      __██__   ██    ██ ██   ██  ██  ██  \n");
+    printf("  ██████    ██     ██    ██ ██   ██   ████   \n");
+    printf("      ██    ██     ██    ██ ██   ██    ██    \n");
+    printf("  ██████    ██      ██████  ██████     ██    \n");
+    printf("       [ R O U T E   A C A D E M I C ]       \n");
+    printf("=============================================\n");
+    setColor(BLACK, WHITE); // Balikin warna normal
+}
 
 // Check Database
-void checkShopDatabase() {
+void checkShopDatabase()
+{
     FILE *fp = fopen("database/shop.dat", "rb");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         // File belum ada, kita buatkan data awal (Default)
         fp = fopen("database/shop.dat", "wb");
-        
+
         ItemShop defaultItems[3] = {
             {1, "Voucher Kantin 10k", 50, 20},
             {2, "Sticker Pack C++", 25, 50},
-            {3, "Kaos Programmer", 300, 5}
-        };
-        
+            {3, "Kaos Programmer", 300, 5}};
+
         fwrite(defaultItems, sizeof(ItemShop), 3, fp);
         printf("Database Shop berhasil diinisialisasi!\n");
         fclose(fp);
-    } else {
+    }
+    else
+    {
         fclose(fp);
     }
 }
 
-void checkMatkulDatabase() {
+void checkMatkulDatabase()
+{
     FILE *fp = fopen("database/matkul.dat", "rb");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         // File belum ada, buat default
         fp = fopen("database/matkul.dat", "wb");
-        
+
         MataKuliah defaultMatkul[5] = {
             {1, "Algoritma Pemrograman", "Senin"},
             {2, "Struktur Data", "Selasa"},
             {3, "Basis Data", "Rabu"},
             {4, "Pemrograman Web", "Kamis"},
-            {5, "Jaringan Komputer", "Jumat"}
-        };
-        
+            {5, "Jaringan Komputer", "Jumat"}};
+
         fwrite(defaultMatkul, sizeof(MataKuliah), 5, fp);
         printf("Database Mata Kuliah berhasil diinisialisasi!\n");
         fclose(fp);
-    } else {
+    }
+    else
+    {
         fclose(fp);
     }
 }
 
-void checkModulDatabase() {
+void checkModulDatabase()
+{
     FILE *fp = fopen("database/modul.dat", "rb");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         fp = fopen("database/modul.dat", "wb");
-        
+
         // Contoh Modul Dummy
         ModulMateri dummy = {1, 1, "Pengenalan Algoritma", "https://google.com"};
-        
+
         fwrite(&dummy, sizeof(ModulMateri), 1, fp);
         printf("Database Modul berhasil diinisialisasi!\n");
         fclose(fp);
-    } else {
+    }
+    else
+    {
+        fclose(fp);
+    }
+}
+
+void checkPengajarDatabase()
+{
+    FILE *fp = fopen("database/pengajar.dat", "rb");
+    if (fp == NULL)
+    {
+        fp = fopen("database/pengajar.dat", "wb");
+
+        // Asumsi: Kita sudah punya user dengan username 'dosen1', 'dosen2', dst.
+        Pengajar dataAwal[5] = {
+            {101, "Prof. Budi Santoso", "dosen1", "Algoritma & C++", 4.9, "Available"},
+            {102, "Dr. Siti Aminah", "dosen2", "Web Dev (Laravel)", 4.8, "Available"},
+            {103, "Pak Anton Wijaya", "dosen3", "IoT & Embedded", 4.7, "Available"},
+            {104, "Kak Dinda Pertiwi", "dosen4", "Frontend (React)", 4.5, "Available"},
+            {105, "Pak Rudi Hermawan", "dosen5", "Dasar Programming", 4.2, "Available"}};
+
+        fwrite(dataAwal, sizeof(Pengajar), 5, fp);
+        printf("Database Pengajar berhasil diinisialisasi!\n");
+        fclose(fp);
+    }
+    else
+    {
         fclose(fp);
     }
 }
@@ -275,7 +329,7 @@ void dashboardPengajar()
             "Kelola Modul Materi",
             "Logout"};
 
-        pilihan = drawMenu(5, 6, menuPengajar, 5);
+        pilihan = drawMenu(5, 6, menuPengajar, 6);
 
         switch (pilihan)
         {
@@ -317,9 +371,10 @@ void dashboardPengawas()
             "CRUD Ruangan",
             "CRUD Modul",
             "CRUD Point Shop",
+            "CRUD Pengajar",
             "Logout"};
 
-        pilihan = drawMenu(5, 8, menuAdmin, 6);
+        pilihan = drawMenu(5, 8, menuAdmin, 7);
 
         switch (pilihan)
         {
@@ -339,28 +394,184 @@ void dashboardPengawas()
             menuKelolaShop();
             break;
         case 5:
+            menuKelolaPengajar();
+            break;
+        case 6:
             clearSession();
             return;
         }
     } while (1);
 }
 
+//||===================================||
+//||          CRUD PENGAJAR            ||
+//||===================================||
+
+void lihatSemuaPengajar()
+{
+    FILE *fp = fopen("database/pengajar.dat", "rb");
+    Pengajar p;
+
+    system("cls");
+    printf("=== DAFTAR PENGAJAR / DOSEN ===\n");
+    printf("%-4s | %-20s | %-10s | %-15s | %-5s | %-10s\n", "ID", "Nama", "Username", "Spesialisasi", "Rate", "Status");
+    printf("----------------------------------------------------------------------------\n");
+
+    if (fp != NULL)
+    {
+        while (fread(&p, sizeof(Pengajar), 1, fp))
+        {
+            printf("%-4d | %-20s | %-10s | %-15s | %.1f   | %-10s\n",
+                   p.id, p.nama, p.username, p.spesialisasi, p.rating, p.status);
+        }
+        fclose(fp);
+    }
+    printf("----------------------------------------------------------------------------\n");
+}
+
+void tambahPengajar()
+{
+    Pengajar p, temp;
+    FILE *fp;
+    int lastId = 100; // Mulai dari 100
+
+    system("cls");
+    printf("=== TAMBAH PENGAJAR BARU ===\n");
+
+    // Auto ID Logic
+    fp = fopen("database/pengajar.dat", "rb");
+    if (fp != NULL)
+    {
+        while (fread(&temp, sizeof(Pengajar), 1, fp))
+        {
+            if (temp.id > lastId)
+                lastId = temp.id;
+        }
+        fclose(fp);
+    }
+    p.id = lastId + 1;
+    printf("ID Pengajar: %d (Auto)\n", p.id);
+
+    printf("Nama Lengkap: ");
+    scanf(" %[^\n]", p.nama);
+
+    printf("Username Akun: ");
+    scanf(" %[^\n]", p.username);
+
+    printf("Spesialisasi: ");
+    scanf(" %[^\n]", p.spesialisasi);
+
+    // Default values
+    p.rating = 5.0;
+    strcpy(p.status, "Available");
+
+    // Simpan
+    fp = fopen("database/pengajar.dat", "ab");
+    fwrite(&p, sizeof(Pengajar), 1, fp);
+    fclose(fp);
+
+    msgBox("SUKSES", "Pengajar berhasil ditambahkan!", GREEN);
+}
+
+void hapusPengajar()
+{
+    FILE *fp, *fpTemp;
+    Pengajar p;
+    int idHapus, found = 0;
+
+    system("cls");
+    lihatSemuaPengajar();
+    printf("\nMasukkan ID Pengajar yang akan DIHAPUS (0 Batal): ");
+    scanf("%d", &idHapus);
+
+    if (idHapus == 0)
+        return;
+
+    fp = fopen("database/pengajar.dat", "rb");
+    fpTemp = fopen("database/temp_pengajar.dat", "wb");
+
+    if (fp == NULL)
+        return;
+
+    while (fread(&p, sizeof(Pengajar), 1, fp))
+    {
+        if (p.id == idHapus)
+        {
+            found = 1;
+        }
+        else
+        {
+            fwrite(&p, sizeof(Pengajar), 1, fpTemp);
+        }
+    }
+
+    fclose(fp);
+    fclose(fpTemp);
+
+    if (found)
+    {
+        remove("database/pengajar.dat");
+        rename("database/temp_pengajar.dat", "database/pengajar.dat");
+        msgBox("SUKSES", "Data berhasil dihapus!", GREEN);
+    }
+    else
+    {
+        remove("database/temp_pengajar.dat");
+        msgBox("GAGAL", "ID tidak ditemukan.", RED);
+    }
+}
+
+void menuKelolaPengajar()
+{
+    int pilihan;
+    char menu[][60] = {
+        "Lihat Daftar Pengajar",
+        "Tambah Pengajar Baru",
+        "Hapus Pengajar",
+        "Kembali"};
+
+    do
+    {
+        system("cls");
+        drawBoxWithShadow(5, 2, 45, 3, "KELOLA PENGAJAR (ADMIN)");
+        pilihan = drawMenu(5, 7, menu, 4);
+
+        switch (pilihan)
+        {
+        case 0:
+            lihatSemuaPengajar();
+            getch();
+            break;
+        case 1:
+            tambahPengajar();
+            break;
+        case 2:
+            hapusPengajar();
+            break;
+        case 3:
+            return;
+        }
+    } while (1);
+}
 
 //||===================================||
 //||           CRUD MODUL              ||
 //||===================================||
 
-void lihatModulPengajar() {
+void lihatModulPengajar()
+{
     FILE *fp = fopen("database/modul.dat", "rb");
     ModulMateri m;
-    
+
     system("cls");
     printf("=== DAFTAR SEMUA MODUL MATERI ===\n");
     printf("%-3s | %-5s | %-25s | %-20s\n", "ID", "ID MK", "Nama Modul", "Link");
     printf("-------------------------------------------------------------\n");
-    
-    if (fp != NULL) {
-        while (fread(&m, sizeof(ModulMateri), 1, fp)) {
+
+    if (fp != NULL)
+    {
+        while (fread(&m, sizeof(ModulMateri), 1, fp))
+        {
             // Tampilkan link dipotong dikit biar ga kepanjangan di tabel
             printf("%-3d | %-5d | %-25s | %.20s...\n", m.id, m.idMatkul, m.namaModul, m.link);
         }
@@ -369,20 +580,23 @@ void lihatModulPengajar() {
     printf("-------------------------------------------------------------\n");
 }
 
-void tambahModul() {
+void tambahModul()
+{
     ModulMateri m, temp;
     FILE *fp;
     int lastId = 0;
 
     system("cls");
     // Tampilkan Matkul dulu biar Pengajar tau ID-nya
-    lihatSemuaMatkul(); 
+    lihatSemuaMatkul();
     printf("\n=== TAMBAH MODUL BARU ===\n");
 
     // Auto ID
     fp = fopen("database/modul.dat", "rb");
-    if (fp != NULL) {
-        while (fread(&temp, sizeof(ModulMateri), 1, fp)) {
+    if (fp != NULL)
+    {
+        while (fread(&temp, sizeof(ModulMateri), 1, fp))
+        {
             lastId = temp.id;
         }
         fclose(fp);
@@ -390,13 +604,13 @@ void tambahModul() {
     m.id = lastId + 1;
 
     printf("ID Modul: %d (Auto)\n", m.id);
-    
+
     printf("Masukkan ID Mata Kuliah: ");
     scanf("%d", &m.idMatkul);
-    
+
     printf("Nama Modul: ");
     scanf(" %[^\n]", m.namaModul); // Input string spasi
-    
+
     printf("Link URL (G-Drive/Youtube): ");
     scanf(" %[^\n]", m.link);
 
@@ -404,11 +618,12 @@ void tambahModul() {
     fp = fopen("database/modul.dat", "ab");
     fwrite(&m, sizeof(ModulMateri), 1, fp);
     fclose(fp);
-    
+
     msgBox("SUKSES", "Modul berhasil diupload (link tersimpan)!", GREEN);
 }
 
-void hapusModul() {
+void hapusModul()
+{
     FILE *fp, *fpTemp;
     ModulMateri m;
     int idHapus, found = 0;
@@ -418,17 +633,23 @@ void hapusModul() {
     printf("\nMasukkan ID Modul yang akan DIHAPUS (0 Batal): ");
     scanf("%d", &idHapus);
 
-    if (idHapus == 0) return;
+    if (idHapus == 0)
+        return;
 
     fp = fopen("database/modul.dat", "rb");
     fpTemp = fopen("database/temp_modul.dat", "wb");
 
-    if (fp == NULL) return;
+    if (fp == NULL)
+        return;
 
-    while (fread(&m, sizeof(ModulMateri), 1, fp)) {
-        if (m.id == idHapus) {
+    while (fread(&m, sizeof(ModulMateri), 1, fp))
+    {
+        if (m.id == idHapus)
+        {
             found = 1;
-        } else {
+        }
+        else
+        {
             fwrite(&m, sizeof(ModulMateri), 1, fpTemp);
         }
     }
@@ -436,56 +657,70 @@ void hapusModul() {
     fclose(fp);
     fclose(fpTemp);
 
-    if (found) {
+    if (found)
+    {
         remove("database/modul.dat");
         rename("database/temp_modul.dat", "database/modul.dat");
         msgBox("SUKSES", "Modul berhasil dihapus!", GREEN);
-    } else {
+    }
+    else
+    {
         remove("database/temp_modul.dat");
         msgBox("GAGAL", "ID Modul tidak ditemukan.", RED);
     }
 }
 
-void menuKelolaModul() {
+void menuKelolaModul()
+{
     int pilihan;
-    char menu[][50] = {
+    char menu[][60] = {
         "Lihat Daftar Modul",
         "Tambah Modul Baru",
         "Hapus Modul",
-        "Kembali"
-    };
+        "Kembali"};
 
-    do {
+    do
+    {
         system("cls");
         drawBoxWithShadow(5, 2, 40, 3, "KELOLA MODUL (PENGAJAR)");
         pilihan = drawMenu(5, 7, menu, 4);
 
-        switch (pilihan) {
-            case 0: lihatModulPengajar(); getch(); break;
-            case 1: tambahModul(); break;
-            case 2: hapusModul(); break;
-            case 3: return;
+        switch (pilihan)
+        {
+        case 0:
+            lihatModulPengajar();
+            getch();
+            break;
+        case 1:
+            tambahModul();
+            break;
+        case 2:
+            hapusModul();
+            break;
+        case 3:
+            return;
         }
     } while (1);
 }
-
-
 
 //||===================================||
 //||          CRUD MATA KULIAH         ||
 //||===================================||
 
-void lihatSemuaMatkul() {
+void lihatSemuaMatkul()
+{
     FILE *fp = fopen("database/matkul.dat", "rb");
     MataKuliah mk;
-    
+
     system("cls");
     printf("=== DAFTAR MATA KULIAH ===\n");
     printf("%-3s | %-30s | %-10s\n", "ID", "Mata Kuliah", "Hari");
     printf("--------------------------------------------------\n");
-    
-    if (fp != NULL) {
-        while (fread(&mk, sizeof(MataKuliah), 1, fp)) {
+
+    if (fp != NULL)
+    {
+        while (fread(&mk, sizeof(MataKuliah), 1, fp))
+        {
             printf("%-3d | %-30s | %-10s\n", mk.id, mk.namaMatkul, mk.hari);
         }
         fclose(fp);
@@ -493,7 +728,8 @@ void lihatSemuaMatkul() {
     printf("--------------------------------------------------\n");
 }
 
-void tambahMatkul() {
+void tambahMatkul()
+{
     MataKuliah mk, temp;
     FILE *fp;
     int lastId = 0;
@@ -503,8 +739,10 @@ void tambahMatkul() {
 
     // Auto ID
     fp = fopen("database/matkul.dat", "rb");
-    if (fp != NULL) {
-        while (fread(&temp, sizeof(MataKuliah), 1, fp)) {
+    if (fp != NULL)
+    {
+        while (fread(&temp, sizeof(MataKuliah), 1, fp))
+        {
             lastId = temp.id;
         }
         fclose(fp);
@@ -512,21 +750,22 @@ void tambahMatkul() {
     mk.id = lastId + 1;
     printf("ID Matkul: %d (Auto)\n", mk.id);
 
-    printf("Nama Mata Kuliah: "); 
+    printf("Nama Mata Kuliah: ");
     scanf(" %[^\n]", mk.namaMatkul); // Input string dengan spasi
-    
-    printf("Hari (Senin-Jumat): "); 
+
+    printf("Hari (Senin-Jumat): ");
     scanf(" %[^\n]", mk.hari);
 
     // Simpan
     fp = fopen("database/matkul.dat", "ab");
     fwrite(&mk, sizeof(MataKuliah), 1, fp);
     fclose(fp);
-    
+
     msgBox("SUKSES", "Mata Kuliah berhasil ditambahkan!", GREEN);
 }
 
-void hapusMatkul() {
+void hapusMatkul()
+{
     FILE *fp, *fpTemp;
     MataKuliah mk;
     int idHapus, found = 0;
@@ -536,17 +775,23 @@ void hapusMatkul() {
     printf("\nMasukkan ID Matkul yang akan DIHAPUS (0 Batal): ");
     scanf("%d", &idHapus);
 
-    if (idHapus == 0) return;
+    if (idHapus == 0)
+        return;
 
     fp = fopen("database/matkul.dat", "rb");
     fpTemp = fopen("database/temp_matkul.dat", "wb");
 
-    if (fp == NULL) return;
+    if (fp == NULL)
+        return;
 
-    while (fread(&mk, sizeof(MataKuliah), 1, fp)) {
-        if (mk.id == idHapus) {
+    while (fread(&mk, sizeof(MataKuliah), 1, fp))
+    {
+        if (mk.id == idHapus)
+        {
             found = 1;
-        } else {
+        }
+        else
+        {
             fwrite(&mk, sizeof(MataKuliah), 1, fpTemp);
         }
     }
@@ -554,17 +799,21 @@ void hapusMatkul() {
     fclose(fp);
     fclose(fpTemp);
 
-    if (found) {
+    if (found)
+    {
         remove("database/matkul.dat");
         rename("database/temp_matkul.dat", "database/matkul.dat");
         msgBox("SUKSES", "Mata Kuliah berhasil dihapus!", GREEN);
-    } else {
+    }
+    else
+    {
         remove("database/temp_matkul.dat");
         msgBox("GAGAL", "ID tidak ditemukan.", RED);
     }
 }
 
-void editMatkul() {
+void editMatkul()
+{
     FILE *fp, *fpTemp;
     MataKuliah mk;
     int idEdit, found = 0;
@@ -574,26 +823,32 @@ void editMatkul() {
     printf("\nMasukkan ID Matkul yang akan DIEDIT (0 Batal): ");
     scanf("%d", &idEdit);
 
-    if (idEdit == 0) return;
+    if (idEdit == 0)
+        return;
 
     fp = fopen("database/matkul.dat", "rb");
     fpTemp = fopen("database/temp_matkul.dat", "wb");
 
-    if (fp == NULL) return;
+    if (fp == NULL)
+        return;
 
-    while (fread(&mk, sizeof(MataKuliah), 1, fp)) {
-        if (mk.id == idEdit) {
+    while (fread(&mk, sizeof(MataKuliah), 1, fp))
+    {
+        if (mk.id == idEdit)
+        {
             found = 1;
             printf("\n-- Edit Data (%s) --\n", mk.namaMatkul);
-            
-            printf("Nama Baru: "); 
+
+            printf("Nama Baru: ");
             scanf(" %[^\n]", mk.namaMatkul);
-            
-            printf("Hari Baru: "); 
+
+            printf("Hari Baru: ");
             scanf(" %[^\n]", mk.hari);
-            
+
             fwrite(&mk, sizeof(MataKuliah), 1, fpTemp); // Tulis data baru
-        } else {
+        }
+        else
+        {
             fwrite(&mk, sizeof(MataKuliah), 1, fpTemp); // Tulis data lama
         }
     }
@@ -601,37 +856,52 @@ void editMatkul() {
     fclose(fp);
     fclose(fpTemp);
 
-    if (found) {
+    if (found)
+    {
         remove("database/matkul.dat");
         rename("database/temp_matkul.dat", "database/matkul.dat");
         msgBox("SUKSES", "Data berhasil diperbarui!", GREEN);
-    } else {
+    }
+    else
+    {
         remove("database/temp_matkul.dat");
         msgBox("GAGAL", "ID tidak ditemukan.", RED);
     }
 }
 
-void menuKelolaMatkul() {
+void menuKelolaMatkul()
+{
     int pilihan;
     char menu[][60] = {
         "Lihat Daftar Matkul",
         "Tambah Matkul Baru",
         "Edit Matkul",
         "Hapus Matkul",
-        "Kembali"
-    };
+        "Kembali"};
 
-    do {
+    do
+    {
         system("cls");
         drawBoxWithShadow(5, 2, 40, 3, "KELOLA MATA KULIAH");
         pilihan = drawMenu(5, 7, menu, 5);
 
-        switch (pilihan) {
-            case 0: lihatSemuaMatkul(); getch(); break;
-            case 1: tambahMatkul(); break;
-            case 2: editMatkul(); break;
-            case 3: hapusMatkul(); break;
-            case 4: return;
+        switch (pilihan)
+        {
+        case 0:
+            lihatSemuaMatkul();
+            getch();
+            break;
+        case 1:
+            tambahMatkul();
+            break;
+        case 2:
+            editMatkul();
+            break;
+        case 3:
+            hapusMatkul();
+            break;
+        case 4:
+            return;
         }
     } while (1);
 }
@@ -640,18 +910,21 @@ void menuKelolaMatkul() {
 //||            CRUD SHOP              ||
 //||===================================||
 
-void lihatSemuaItem() {
+void lihatSemuaItem()
+{
     FILE *fp = fopen("database/shop.dat", "rb");
     ItemShop item;
-    
+
     system("cls");
     printf("=== DAFTAR BARANG TOKO ===\n");
     printf("%-3s | %-25s | %-6s | %-5s\n", "ID", "Nama Item", "Harga", "Stok");
     printf("--------------------------------------------------\n");
-    
-    if (fp != NULL) {
-        while (fread(&item, sizeof(ItemShop), 1, fp)) {
-            printf("%-3d | %-25s | %-6d | %-5d\n", 
+
+    if (fp != NULL)
+    {
+        while (fread(&item, sizeof(ItemShop), 1, fp))
+        {
+            printf("%-3d | %-25s | %-6d | %-5d\n",
                    item.id, item.namaItem, item.hargaPoin, item.stok);
         }
         fclose(fp);
@@ -659,7 +932,8 @@ void lihatSemuaItem() {
     printf("--------------------------------------------------\n");
 }
 
-void tambahItemShop() {
+void tambahItemShop()
+{
     ItemShop newItem, temp;
     FILE *fp;
     int lastId = 0;
@@ -669,8 +943,10 @@ void tambahItemShop() {
 
     // Auto ID
     fp = fopen("database/shop.dat", "rb");
-    if (fp != NULL) {
-        while (fread(&temp, sizeof(ItemShop), 1, fp)) {
+    if (fp != NULL)
+    {
+        while (fread(&temp, sizeof(ItemShop), 1, fp))
+        {
             lastId = temp.id;
         }
         fclose(fp);
@@ -678,24 +954,25 @@ void tambahItemShop() {
     newItem.id = lastId + 1;
     printf("ID Barang: %d (Auto)\n", newItem.id);
 
-    printf("Nama Barang: "); 
+    printf("Nama Barang: ");
     scanf(" %[^\n]", newItem.namaItem); // Trik scanf spasi
-    
-    printf("Harga (Poin): "); 
+
+    printf("Harga (Poin): ");
     scanf("%d", &newItem.hargaPoin);
-    
-    printf("Stok Awal: "); 
+
+    printf("Stok Awal: ");
     scanf("%d", &newItem.stok);
 
     // Simpan
     fp = fopen("database/shop.dat", "ab");
     fwrite(&newItem, sizeof(ItemShop), 1, fp);
     fclose(fp);
-    
+
     msgBox("SUKSES", "Barang baru berhasil ditambahkan!", GREEN);
 }
 
-void hapusItemShop() {
+void hapusItemShop()
+{
     FILE *fp, *fpTemp;
     ItemShop item;
     int idHapus, found = 0;
@@ -705,17 +982,23 @@ void hapusItemShop() {
     printf("\nMasukkan ID Barang yang akan DIHAPUS (0 Batal): ");
     scanf("%d", &idHapus);
 
-    if (idHapus == 0) return;
+    if (idHapus == 0)
+        return;
 
     fp = fopen("database/shop.dat", "rb");
     fpTemp = fopen("database/temp_shop.dat", "wb");
 
-    if (fp == NULL) return;
+    if (fp == NULL)
+        return;
 
-    while (fread(&item, sizeof(ItemShop), 1, fp)) {
-        if (item.id == idHapus) {
+    while (fread(&item, sizeof(ItemShop), 1, fp))
+    {
+        if (item.id == idHapus)
+        {
             found = 1;
-        } else {
+        }
+        else
+        {
             fwrite(&item, sizeof(ItemShop), 1, fpTemp);
         }
     }
@@ -723,35 +1006,48 @@ void hapusItemShop() {
     fclose(fp);
     fclose(fpTemp);
 
-    if (found) {
+    if (found)
+    {
         remove("database/shop.dat");
         rename("database/temp_shop.dat", "database/shop.dat");
         msgBox("SUKSES", "Barang berhasil dihapus!", GREEN);
-    } else {
+    }
+    else
+    {
         remove("database/temp_shop.dat");
         msgBox("GAGAL", "ID Barang tidak ditemukan.", RED);
     }
 }
 
-void menuKelolaShop() {
+void menuKelolaShop()
+{
     int pilihan;
     char menu[][60] = {
         "Lihat Daftar Barang",
         "Tambah Barang Baru",
         "Hapus Barang",
-        "Kembali"
-    };
+        "Kembali"};
 
-    do {
+    do
+    {
         system("cls");
         drawBoxWithShadow(5, 2, 40, 3, "KELOLA SHOP (ADMIN)");
         pilihan = drawMenu(5, 7, menu, 4);
 
-        switch (pilihan) {
-            case 0: lihatSemuaItem(); getch(); break;
-            case 1: tambahItemShop(); break;
-            case 2: hapusItemShop(); break;
-            case 3: return;
+        switch (pilihan)
+        {
+        case 0:
+            lihatSemuaItem();
+            getch();
+            break;
+        case 1:
+            tambahItemShop();
+            break;
+        case 2:
+            hapusItemShop();
+            break;
+        case 3:
+            return;
         }
     } while (1);
 }
@@ -1624,27 +1920,32 @@ void absen()
 
     // 1. Tampilkan Daftar dari File
     fp = fopen("database/matkul.dat", "rb");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         msgBox("ERROR", "Jadwal kuliah belum tersedia.", RED);
         return;
     }
 
-    while (fread(&mk, sizeof(MataKuliah), 1, fp)) {
+    while (fread(&mk, sizeof(MataKuliah), 1, fp))
+    {
         printf("[%d] %-25s (%s)\n", mk.id, mk.namaMatkul, mk.hari);
     }
     // Jangan tutup file dulu, atau tutup lalu buka lagi nanti untuk validasi
-    fclose(fp); 
+    fclose(fp);
 
     printf("-----------------------------------------\n");
     printf("Masukkan ID Matkul untuk Absen (0 Batal): ");
     scanf("%d", &pilihID);
 
-    if (pilihID == 0) return;
+    if (pilihID == 0)
+        return;
 
     // 2. Validasi ID dan Proses Absen
     fp = fopen("database/matkul.dat", "rb"); // Buka lagi untuk cek ID
-    while (fread(&mk, sizeof(MataKuliah), 1, fp)) {
-        if (mk.id == pilihID) {
+    while (fread(&mk, sizeof(MataKuliah), 1, fp))
+    {
+        if (mk.id == pilihID)
+        {
             found = 1;
             strcpy(namaMatkulDipilih, mk.namaMatkul);
             break;
@@ -1652,19 +1953,22 @@ void absen()
     }
     fclose(fp);
 
-    if (found) {
+    if (found)
+    {
         // Tampilkan Sukses
         char pesan[100];
         sprintf(pesan, "Berhasil absen di %s!", namaMatkulDipilih);
         msgBox("SUKSES", pesan, GREEN);
-        
+
         // Tambah Poin
         dataUser[currentUserIndex].totalPoin += 10;
         tambahPoinUser(dataUser[currentUserIndex].username, 10); // Simpan Permanen
-        
+
         printf("\n[BONUS] +10 Poin ditambahkan ke akun Anda!\n");
         getch();
-    } else {
+    }
+    else
+    {
         msgBox("GAGAL", "ID Mata Kuliah tidak valid.", RED);
     }
 }
@@ -1710,12 +2014,32 @@ void leaderboard()
 
 void pelatih()
 {
-    int idPilihan, found = 0;
-    int indexPengajar = -1;
+    FILE *fp;
+    Pengajar p;
+    // Kita butuh buffer RAM untuk proses edit status
+    Pengajar listPengajar[50];
+    int totalP = 0;
+    int idPilihan, foundIndex = -1;
     char konfirmasi;
 
     do
     {
+        // 1. BACA DATA DARI FILE KE RAM
+        totalP = 0;
+        fp = fopen("database/pengajar.dat", "rb");
+        if (fp == NULL)
+        {
+            msgBox("ERROR", "Database Pengajar Hilang!", RED);
+            return;
+        }
+        while (fread(&p, sizeof(Pengajar), 1, fp))
+        {
+            listPengajar[totalP] = p;
+            totalP++;
+        }
+        fclose(fp);
+
+        // 2. TAMPILKAN DAFTAR
         system("cls");
         printf("==================================================================\n");
         printf("\tBOOKING JADWAL KONSULTASI (Saldo Poin: %d)\n", dataUser[currentUserIndex].totalPoin);
@@ -1723,24 +2047,22 @@ void pelatih()
         printf("%-4s | %-20s | %-20s | %-6s | %-15s\n", "ID", "Nama Pengajar", "Spesialisasi", "Rating", "Status");
         printf("------------------------------------------------------------------\n");
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < totalP; i++)
         {
-            // Visualisasi Bintang
             char bintang[10] = "";
-            if (daftarPengajar[i].rating >= 4.8)
+            if (listPengajar[i].rating >= 4.8)
                 strcpy(bintang, "*");
 
-            // Warna/Status Logic (Visual Text)
             printf("%-4d | %-20s | %-20s | %.1f %s | %-15s\n",
-                   daftarPengajar[i].id,
-                   daftarPengajar[i].nama,
-                   daftarPengajar[i].spesialisasi,
-                   daftarPengajar[i].rating,
+                   listPengajar[i].id,
+                   listPengajar[i].nama,
+                   listPengajar[i].spesialisasi,
+                   listPengajar[i].rating,
                    bintang,
-                   daftarPengajar[i].status);
+                   listPengajar[i].status);
         }
         printf("------------------------------------------------------------------\n");
-        printf("Ketik 0 untuk kembali ke Dashboard.\n");
+        printf("Ketik 0 untuk kembali.\n");
         printf("Masukkan ID Pengajar untuk Booking: ");
 
         if (scanf("%d", &idPilihan) != 1)
@@ -1749,60 +2071,68 @@ void pelatih()
                 ;
             idPilihan = -1;
         }
-
         if (idPilihan == 0)
-            return; // Kembali
+            return;
 
-        // LOGIKA PENCARIAN ID
-        found = 0;
-        for (int i = 0; i < 5; i++)
+        // 3. CARI ID DI RAM
+        foundIndex = -1;
+        for (int i = 0; i < totalP; i++)
         {
-            if (daftarPengajar[i].id == idPilihan)
+            if (listPengajar[i].id == idPilihan)
             {
-                indexPengajar = i;
-                found = 1;
+                foundIndex = i;
                 break;
             }
         }
 
-        if (found)
+        if (foundIndex != -1)
         {
-            // Cek Status: Apakah Available?
-            if (strcmp(daftarPengajar[indexPengajar].status, "Available") == 0)
+            // Cek Ketersediaan
+            if (strcmp(listPengajar[foundIndex].status, "Available") == 0)
             {
-
-                printf("\nIngin booking sesi dengan %s? (y/n): ", daftarPengajar[indexPengajar].nama);
-                scanf(" %c", &konfirmasi); // Spasi sebelum %c untuk membersihkan buffer
-
-                if (konfirmasi == 'y' || konfirmasi == 'Y')
+                if (dataUser[currentUserIndex].totalPoin < 20)
                 {
-
-                    // 1. Kurangi Poin
-                    dataUser[currentUserIndex].totalPoin -= 20;
-
-                    // 2. Ubah Status Pengajar
-                    // Kita tempelkan nama user agar terlihat siapa yang booking
-                    sprintf(daftarPengajar[indexPengajar].status, "Booked by %s", dataUser[currentUserIndex].username);
-
-                    printf("\n[SUKSES] Jadwal berhasil dibuat! Poin Anda tersisa: %d\n", dataUser[currentUserIndex].totalPoin);
+                    msgBox("GAGAL", "Poin tidak cukup! (Butuh 20 Poin)", RED);
                 }
                 else
                 {
-                    printf("\nBooking dibatalkan.\n");
+                    printf("\nBooking %s (-20 Poin)? (y/n): ", listPengajar[foundIndex].nama);
+                    scanf(" %c", &konfirmasi);
+
+                    if (konfirmasi == 'y' || konfirmasi == 'Y')
+                    {
+                        // 1. UPDATE DATA SISWA (Berkurang)
+                        dataUser[currentUserIndex].totalPoin -= 20;
+                        tambahPoinUser(dataUser[currentUserIndex].username, -20); // Update Database User (Siswa)
+
+                        // 2. UPDATE DATA PENGAJAR (Bertambah)
+                        // Kita panggil fungsi sakti 'tambahPoinUser' ke username pengajar
+                        tambahPoinUser(listPengajar[foundIndex].username, 20);
+
+                        // 3. UPDATE STATUS BOOKING
+                        sprintf(listPengajar[foundIndex].status, "Booked by %s", dataUser[currentUserIndex].username);
+
+                        // 4. SIMPAN PERUBAHAN STATUS KE FILE PENGAJAR
+                        fp = fopen("database/pengajar.dat", "wb");
+                        for (int i = 0; i < totalP; i++)
+                        {
+                            fwrite(&listPengajar[i], sizeof(Pengajar), 1, fp);
+                        }
+                        fclose(fp);
+
+                        msgBox("SUKSES", "Jadwal berhasil dibuat! Poin telah ditransfer.", GREEN);
+                    }
                 }
             }
             else
             {
-                printf("\n[MAAF] Pengajar ini sedang tidak tersedia (%s).\n", daftarPengajar[indexPengajar].status);
+                msgBox("MAAF", "Pengajar sedang sibuk / sudah dibooking.", RED);
             }
         }
         else
         {
-            printf("\n[ERROR] ID Pengajar tidak ditemukan.\n");
+            msgBox("ERROR", "ID Pengajar tidak ditemukan.", RED);
         }
-
-        printf("\nTekan tombol apa saja untuk lanjut...");
-        getch();
 
     } while (idPilihan != 0);
 }
@@ -1810,8 +2140,9 @@ void pelatih()
 void reservasi()
 {
     int foundBooking = 0;
-    FILE *fp;       // Tambahan untuk baca file
-    MataKuliah mk;  // Tambahan variable penampung
+    FILE *fp;
+    Pengajar p;    // Variabel untuk menampung data Pengajar dari file
+    MataKuliah mk; // Variabel untuk menampung data Matkul dari file
 
     system("cls");
     printf("==================================================================\n");
@@ -1821,23 +2152,29 @@ void reservasi()
     printf("Total Poin : %d\n", dataUser[currentUserIndex].totalPoin);
     printf("==================================================================\n\n");
 
-    // --- BAGIAN 1: JADWAL JANJI TEMU (BOOKING) ---
-    // (Bagian ini aman karena daftarPengajar masih array)
+    // --- BAGIAN 1: JADWAL KONSULTASI (Booking Pengajar) ---
     printf("[1] JADWAL KONSULTASI (Mentor/Dosen)\n");
     printf("------------------------------------------------------------------\n");
     printf("%-20s | %-20s | %-15s\n", "Nama Pengajar", "Spesialisasi", "Status");
     printf("------------------------------------------------------------------\n");
 
-    for (int i = 0; i < 5; i++)
+    // BACA DARI FILE pengajar.dat
+    fp = fopen("database/pengajar.dat", "rb");
+    if (fp != NULL)
     {
-        if (strstr(daftarPengajar[i].status, dataUser[currentUserIndex].username) != NULL)
+        while (fread(&p, sizeof(Pengajar), 1, fp))
         {
-            printf("%-20s | %-20s | %-15s\n",
-                   daftarPengajar[i].nama,
-                   daftarPengajar[i].spesialisasi,
-                   "Terjadwal (Booked)");
-            foundBooking = 1;
+            // Cek apakah string status mengandung username user saat ini
+            if (strstr(p.status, dataUser[currentUserIndex].username) != NULL)
+            {
+                printf("%-20s | %-20s | %-15s\n",
+                       p.nama,
+                       p.spesialisasi,
+                       "Terjadwal (Booked)");
+                foundBooking = 1;
+            }
         }
+        fclose(fp);
     }
 
     if (!foundBooking)
@@ -1847,16 +2184,16 @@ void reservasi()
     }
     printf("------------------------------------------------------------------\n\n");
 
-    // --- BAGIAN 2: JADWAL KULIAH REGULER (PERBAIKAN DI SINI) ---
+    // --- BAGIAN 2: JADWAL KULIAH REGULER ---
     printf("[2] JADWAL KULIAH REGULER (Route Minggu Ini)\n");
     printf("------------------------------------------------------------------\n");
     printf("%-5s | %-25s | %-10s\n", "ID", "Mata Kuliah", "Hari");
     printf("------------------------------------------------------------------\n");
 
-    // BACA DARI FILE matkul.dat (Bukan Array lagi)
+    // BACA DARI FILE matkul.dat
     fp = fopen("database/matkul.dat", "rb");
-    
-    if (fp != NULL) {
+    if (fp != NULL)
+    {
         while (fread(&mk, sizeof(MataKuliah), 1, fp))
         {
             printf("%-5d | %-25s | %-10s\n",
@@ -1865,10 +2202,11 @@ void reservasi()
                    mk.hari);
         }
         fclose(fp);
-    } else {
-        printf("   >> Data jadwal belum tersedia di database.\n");
     }
-
+    else
+    {
+        printf("   >> Data jadwal belum tersedia.\n");
+    }
     printf("------------------------------------------------------------------\n");
 
     printf("\nTips: Jangan lupa lakukan 'Absen' sesuai hari kuliah untuk dapat poin!\n");
@@ -1876,7 +2214,8 @@ void reservasi()
     getch();
 }
 
-void pointShop() {
+void pointShop()
+{
     FILE *fp;
     ItemShop item;
     ItemShop daftarBelanja[50]; // Buffer RAM sementara
@@ -1884,16 +2223,19 @@ void pointShop() {
     int pilihan, konfirmasi;
     int found = 0;
 
-    do {
+    do
+    {
         // 1. LOAD DATA DARI FILE KE RAM
         // Kenapa diload dulu? Agar mudah menampilkan menu & memilih index
         totalBarang = 0;
         fp = fopen("database/shop.dat", "rb");
-        if (fp == NULL) {
+        if (fp == NULL)
+        {
             msgBox("MAAF", "Toko sedang tutup (Database missing).", RED);
             return;
         }
-        while (fread(&item, sizeof(ItemShop), 1, fp)) {
+        while (fread(&item, sizeof(ItemShop), 1, fp))
+        {
             daftarBelanja[totalBarang] = item;
             totalBarang++;
         }
@@ -1907,57 +2249,67 @@ void pointShop() {
         printf("%-3s | %-25s | %-8s | %-5s\n", "ID", "Nama Item", "Harga", "Stok");
         printf("--------------------------------------------------\n");
 
-        for (int i = 0; i < totalBarang; i++) {
-             printf("%-3d | %-25s | %-8d | %-5d\n", 
-                   daftarBelanja[i].id, 
-                   daftarBelanja[i].namaItem, 
-                   daftarBelanja[i].hargaPoin, 
+        for (int i = 0; i < totalBarang; i++)
+        {
+            printf("%-3d | %-25s | %-8d | %-5d\n",
+                   daftarBelanja[i].id,
+                   daftarBelanja[i].namaItem,
+                   daftarBelanja[i].hargaPoin,
                    daftarBelanja[i].stok);
         }
         printf("--------------------------------------------------\n");
         printf("0. Kembali ke Dashboard\n");
         printf("Pilih ID Barang yang ingin dibeli: ");
         scanf("%d", &pilihan);
-        
-        if (pilihan == 0) return;
+
+        if (pilihan == 0)
+            return;
 
         // 3. CARI BARANG YANG DIPILIH
         int indexDipilih = -1;
-        for(int i=0; i<totalBarang; i++){
-            if(daftarBelanja[i].id == pilihan) {
+        for (int i = 0; i < totalBarang; i++)
+        {
+            if (daftarBelanja[i].id == pilihan)
+            {
                 indexDipilih = i;
                 break;
             }
         }
 
         // 4. PROSES TRANSAKSI
-        if (indexDipilih != -1) {
+        if (indexDipilih != -1)
+        {
             ItemShop barang = daftarBelanja[indexDipilih];
 
-            if (barang.stok <= 0) {
-                 msgBox("GAGAL", "Stok barang habis!", RED);
-            } 
-            else if (dataUser[currentUserIndex].totalPoin < barang.hargaPoin) {
-                 msgBox("MISKIN", "Poin tidak cukup!", RED);
+            if (barang.stok <= 0)
+            {
+                msgBox("GAGAL", "Stok barang habis!", RED);
             }
-            else {
+            else if (dataUser[currentUserIndex].totalPoin < barang.hargaPoin)
+            {
+                msgBox("MISKIN", "Poin tidak cukup!", RED);
+            }
+            else
+            {
                 // Konfirmasi
                 printf("\nBeli '%s' seharga %d Poin? (1=Ya, 0=Batal): ", barang.namaItem, barang.hargaPoin);
                 scanf("%d", &konfirmasi);
 
-                if (konfirmasi == 1) {
+                if (konfirmasi == 1)
+                {
                     // A. Update RAM (User)
                     dataUser[currentUserIndex].totalPoin -= barang.hargaPoin;
-                    
+
                     // B. Update Database User (PENTING)
                     tambahPoinUser(dataUser[currentUserIndex].username, -barang.hargaPoin); // Minus untuk mengurangi
 
                     // C. Update Database Shop (Kurangi Stok)
                     // Teknik: Update di Array RAM -> Tulis Ulang Semua ke File
                     daftarBelanja[indexDipilih].stok -= 1; // Kurangi stok di RAM
-                    
+
                     fp = fopen("database/shop.dat", "wb"); // Mode wb (Write Binary) menimpa file lama
-                    for(int i=0; i<totalBarang; i++){
+                    for (int i = 0; i < totalBarang; i++)
+                    {
                         fwrite(&daftarBelanja[i], sizeof(ItemShop), 1, fp);
                     }
                     fclose(fp);
@@ -1965,7 +2317,9 @@ void pointShop() {
                     msgBox("SUKSES", "Pembelian berhasil! Barang masuk inventori.", GREEN);
                 }
             }
-        } else {
+        }
+        else
+        {
             msgBox("ERROR", "ID Barang tidak ditemukan.", RED);
         }
 
@@ -2118,7 +2472,8 @@ void jalankanQuiz()
     }
 }
 
-void downloadModul() {
+void downloadModul()
+{
     FILE *fp;
     ModulMateri m;
     int pilihMatkul, idModul, found = 0;
@@ -2128,14 +2483,15 @@ void downloadModul() {
     system("cls");
     printf("=== DOWNLOAD MODUL ===\n");
     printf("Pilih Mata Kuliah untuk melihat modul:\n");
-    
+
     // Tampilkan daftar matkul (reuse fungsi yg ada atau baca file matkul lagi)
-    lihatSemuaMatkul(); 
-    
+    lihatSemuaMatkul();
+
     printf("\nMasukkan ID Mata Kuliah (0 Kembali): ");
     scanf("%d", &pilihMatkul);
-    
-    if (pilihMatkul == 0) return;
+
+    if (pilihMatkul == 0)
+        return;
 
     // 2. Tampilkan Modul Sesuai Matkul yg Dipilih
     system("cls");
@@ -2147,11 +2503,14 @@ void downloadModul() {
 
     fp = fopen("database/modul.dat", "rb");
     int count = 0;
-    
-    if (fp != NULL) {
-        while (fread(&m, sizeof(ModulMateri), 1, fp)) {
+
+    if (fp != NULL)
+    {
+        while (fread(&m, sizeof(ModulMateri), 1, fp))
+        {
             // Filter: Hanya tampilkan modul milik Matkul ID ini
-            if (m.idMatkul == pilihMatkul) {
+            if (m.idMatkul == pilihMatkul)
+            {
                 printf("%-3d | %-30s | [Download]\n", m.id, m.namaModul);
                 count++;
             }
@@ -2159,7 +2518,8 @@ void downloadModul() {
         fclose(fp);
     }
 
-    if (count == 0) {
+    if (count == 0)
+    {
         msgBox("KOSONG", "Belum ada modul untuk mata kuliah ini.", BLUE);
         return;
     }
@@ -2171,22 +2531,25 @@ void downloadModul() {
     // 3. Eksekusi Buka Link
     fp = fopen("database/modul.dat", "rb");
     found = 0;
-    while (fread(&m, sizeof(ModulMateri), 1, fp)) {
-        if (m.id == idModul && m.idMatkul == pilihMatkul) {
+    while (fread(&m, sizeof(ModulMateri), 1, fp))
+    {
+        if (m.id == idModul && m.idMatkul == pilihMatkul)
+        {
             found = 1;
-            
+
             printf("\nMembuka link: %s ...\n", m.link);
-            
+
             // Perintah Magic Windows: "start <url>"
             sprintf(command, "start %s", m.link);
-            system(command); 
-            
+            system(command);
+
             break;
         }
     }
     fclose(fp);
 
-    if (!found) {
+    if (!found)
+    {
         msgBox("ERROR", "ID Modul salah atau tidak ditemukan.", RED);
     }
 }
@@ -2352,7 +2715,6 @@ int main()
 
     fullscreen();
     // Ini hanya contoh tes
-system("start https://google.com");
     srand(time(0));
     hideCursor();
     remove_scrollbar();
@@ -2391,14 +2753,17 @@ system("start https://google.com");
 
                 if (role == 1)
                 {
+                    system("color 0B");
                     dashboardSiswa();
                 }
                 else if (role == 2)
                 {
+                    system("color 0E");
                     dashboardPengajar();
                 }
                 else if (role == 3)
                 {
+                    system("color 0D");
                     dashboardPengawas();
                 }
                 else
