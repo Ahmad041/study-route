@@ -241,7 +241,7 @@ void dashboardSiswa()
             reservasi();
             break; // Nanti diupdate jadi Reservasi + Kritik Saran
         case 2:
-            msgBox("INFO", "Fitur Download Modul (Coming Soon)", BLUE);
+            downloadModul();
             break;
         case 3:
             pointShop();
@@ -272,6 +272,7 @@ void dashboardPengajar()
             "Kelola Quiz",
             "Reservasi Ruangan",
             "Point Shop",
+            "Kelola Modul Materi",
             "Logout"};
 
         pilihan = drawMenu(5, 6, menuPengajar, 5);
@@ -289,8 +290,11 @@ void dashboardPengajar()
             break;
         case 3:
             pointShop();
-            break; // Pengajar juga bisa belanja
+            break;
         case 4:
+            menuKelolaModul();
+            break;
+        case 5:
             clearSession();
             return;
         }
@@ -323,13 +327,13 @@ void dashboardPengawas()
             menuKelolaUser();
             break;
         case 1:
-            msgBox("INFO", "Menu Kelola Matkul (Next Step)", RED);
+            menuKelolaMatkul();
             break;
         case 2:
             Ruangan();
             break;
         case 3:
-            msgBox("INFO", "Menu Kelola Modul (Next Step)", RED);
+            menuKelolaModul();
             break;
         case 4:
             menuKelolaShop();
@@ -340,6 +344,131 @@ void dashboardPengawas()
         }
     } while (1);
 }
+
+
+//||===================================||
+//||           CRUD MODUL              ||
+//||===================================||
+
+void lihatModulPengajar() {
+    FILE *fp = fopen("database/modul.dat", "rb");
+    ModulMateri m;
+    
+    system("cls");
+    printf("=== DAFTAR SEMUA MODUL MATERI ===\n");
+    printf("%-3s | %-5s | %-25s | %-20s\n", "ID", "ID MK", "Nama Modul", "Link");
+    printf("-------------------------------------------------------------\n");
+    
+    if (fp != NULL) {
+        while (fread(&m, sizeof(ModulMateri), 1, fp)) {
+            // Tampilkan link dipotong dikit biar ga kepanjangan di tabel
+            printf("%-3d | %-5d | %-25s | %.20s...\n", m.id, m.idMatkul, m.namaModul, m.link);
+        }
+        fclose(fp);
+    }
+    printf("-------------------------------------------------------------\n");
+}
+
+void tambahModul() {
+    ModulMateri m, temp;
+    FILE *fp;
+    int lastId = 0;
+
+    system("cls");
+    // Tampilkan Matkul dulu biar Pengajar tau ID-nya
+    lihatSemuaMatkul(); 
+    printf("\n=== TAMBAH MODUL BARU ===\n");
+
+    // Auto ID
+    fp = fopen("database/modul.dat", "rb");
+    if (fp != NULL) {
+        while (fread(&temp, sizeof(ModulMateri), 1, fp)) {
+            lastId = temp.id;
+        }
+        fclose(fp);
+    }
+    m.id = lastId + 1;
+
+    printf("ID Modul: %d (Auto)\n", m.id);
+    
+    printf("Masukkan ID Mata Kuliah: ");
+    scanf("%d", &m.idMatkul);
+    
+    printf("Nama Modul: ");
+    scanf(" %[^\n]", m.namaModul); // Input string spasi
+    
+    printf("Link URL (G-Drive/Youtube): ");
+    scanf(" %[^\n]", m.link);
+
+    // Simpan
+    fp = fopen("database/modul.dat", "ab");
+    fwrite(&m, sizeof(ModulMateri), 1, fp);
+    fclose(fp);
+    
+    msgBox("SUKSES", "Modul berhasil diupload (link tersimpan)!", GREEN);
+}
+
+void hapusModul() {
+    FILE *fp, *fpTemp;
+    ModulMateri m;
+    int idHapus, found = 0;
+
+    system("cls");
+    lihatModulPengajar();
+    printf("\nMasukkan ID Modul yang akan DIHAPUS (0 Batal): ");
+    scanf("%d", &idHapus);
+
+    if (idHapus == 0) return;
+
+    fp = fopen("database/modul.dat", "rb");
+    fpTemp = fopen("database/temp_modul.dat", "wb");
+
+    if (fp == NULL) return;
+
+    while (fread(&m, sizeof(ModulMateri), 1, fp)) {
+        if (m.id == idHapus) {
+            found = 1;
+        } else {
+            fwrite(&m, sizeof(ModulMateri), 1, fpTemp);
+        }
+    }
+
+    fclose(fp);
+    fclose(fpTemp);
+
+    if (found) {
+        remove("database/modul.dat");
+        rename("database/temp_modul.dat", "database/modul.dat");
+        msgBox("SUKSES", "Modul berhasil dihapus!", GREEN);
+    } else {
+        remove("database/temp_modul.dat");
+        msgBox("GAGAL", "ID Modul tidak ditemukan.", RED);
+    }
+}
+
+void menuKelolaModul() {
+    int pilihan;
+    char menu[][50] = {
+        "Lihat Daftar Modul",
+        "Tambah Modul Baru",
+        "Hapus Modul",
+        "Kembali"
+    };
+
+    do {
+        system("cls");
+        drawBoxWithShadow(5, 2, 40, 3, "KELOLA MODUL (PENGAJAR)");
+        pilihan = drawMenu(5, 7, menu, 4);
+
+        switch (pilihan) {
+            case 0: lihatModulPengajar(); getch(); break;
+            case 1: tambahModul(); break;
+            case 2: hapusModul(); break;
+            case 3: return;
+        }
+    } while (1);
+}
+
 
 
 //||===================================||
@@ -484,7 +613,7 @@ void editMatkul() {
 
 void menuKelolaMatkul() {
     int pilihan;
-    char menu[][50] = {
+    char menu[][60] = {
         "Lihat Daftar Matkul",
         "Tambah Matkul Baru",
         "Edit Matkul",
@@ -1989,6 +2118,79 @@ void jalankanQuiz()
     }
 }
 
+void downloadModul() {
+    FILE *fp;
+    ModulMateri m;
+    int pilihMatkul, idModul, found = 0;
+    char command[300]; // Untuk perintah system()
+
+    // 1. Pilih Mata Kuliah Dulu
+    system("cls");
+    printf("=== DOWNLOAD MODUL ===\n");
+    printf("Pilih Mata Kuliah untuk melihat modul:\n");
+    
+    // Tampilkan daftar matkul (reuse fungsi yg ada atau baca file matkul lagi)
+    lihatSemuaMatkul(); 
+    
+    printf("\nMasukkan ID Mata Kuliah (0 Kembali): ");
+    scanf("%d", &pilihMatkul);
+    
+    if (pilihMatkul == 0) return;
+
+    // 2. Tampilkan Modul Sesuai Matkul yg Dipilih
+    system("cls");
+    printf("=== DAFTAR MODUL TERSEDIA ===\n");
+    printf("Matkul ID: %d\n", pilihMatkul);
+    printf("--------------------------------------------------\n");
+    printf("%-3s | %-30s | %-10s\n", "ID", "Nama Modul", "Action");
+    printf("--------------------------------------------------\n");
+
+    fp = fopen("database/modul.dat", "rb");
+    int count = 0;
+    
+    if (fp != NULL) {
+        while (fread(&m, sizeof(ModulMateri), 1, fp)) {
+            // Filter: Hanya tampilkan modul milik Matkul ID ini
+            if (m.idMatkul == pilihMatkul) {
+                printf("%-3d | %-30s | [Download]\n", m.id, m.namaModul);
+                count++;
+            }
+        }
+        fclose(fp);
+    }
+
+    if (count == 0) {
+        msgBox("KOSONG", "Belum ada modul untuk mata kuliah ini.", BLUE);
+        return;
+    }
+
+    printf("--------------------------------------------------\n");
+    printf("Masukkan ID Modul untuk di-download: ");
+    scanf("%d", &idModul);
+
+    // 3. Eksekusi Buka Link
+    fp = fopen("database/modul.dat", "rb");
+    found = 0;
+    while (fread(&m, sizeof(ModulMateri), 1, fp)) {
+        if (m.id == idModul && m.idMatkul == pilihMatkul) {
+            found = 1;
+            
+            printf("\nMembuka link: %s ...\n", m.link);
+            
+            // Perintah Magic Windows: "start <url>"
+            sprintf(command, "start %s", m.link);
+            system(command); 
+            
+            break;
+        }
+    }
+    fclose(fp);
+
+    if (!found) {
+        msgBox("ERROR", "ID Modul salah atau tidak ditemukan.", RED);
+    }
+}
+
 //||==========================================||
 //||                Ini Login                 ||
 //||==========================================||
@@ -2149,6 +2351,8 @@ int main()
 {
 
     fullscreen();
+    // Ini hanya contoh tes
+system("start https://google.com");
     srand(time(0));
     hideCursor();
     remove_scrollbar();
